@@ -1,4 +1,4 @@
-function [Ex, Ey, Ez] = CylinderIntegral(z, rho, phi, fnum, thetaMax)
+function [Ex, Ey, Ez] = CylinderIntegral(x, y, z, t)
 global lambda fnum w0 z0 f tau;
 % TODO: pulse
 
@@ -29,19 +29,23 @@ yrange = ymin:(ymax-ymin)/N:ymax;
 
 % k = 2*pi
 
+%% cylindrical integral variables
+rho = sqrt(x.^2 + y.^2);
+phi = atan2(y,x);
+thetaMax = acos((fnum-1)/(fnum+1));
 theta = 0:thetaMax/N:thetaMax;
 t=(1-cos(theta))./(1+cos(theta));
 fac=exp(-(4*fnum)^2*t+2i*pi*z*cos(theta));
 
 %% integrate over all points within the mask
-Ex = 0*rho;
+Ex = 0*x;
 Ey = Ex;
 Ez = Ex;
 %Bx = Ex;
 %By = Ex;
 %Bz = Ex;
 
-for m=1:numel(rho)
+for m=1:numel(x)
 	arg=2*pi*rho(m)*sin(theta);
 	
     Ex_intg = sin(theta).*fac.*( besselj(0,arg) + t.*cos(2*phi(m)).*besselj(2,arg) ) ...

@@ -23,18 +23,20 @@ yrange = ymin:dy:ymax;
 [x,y] = meshgrid(xrange,yrange);
 
 %% for each point on observation plane, integrate fields on source plane
-[Ex,Ey,Ez,Bx,By,Bz] = IgnatovskyIntegral(x,y,z,t);
+%[Ex,Ey,Ez,Bx,By,Bz] = IgnatovskyIntegral(x,y,z,t);
 %% compare w/ Singh model
-[Exs,Eys,Ezs,Bxs,Bys,Bzs] = IgnatovskyIntegral(x,y,z,t);
+%[Exs,Eys,Ezs,Bxs,Bys,Bzs] = IgnatovskyIntegral(x,y,z,t);
 %% Dr Peatross code for comparison
 addpath("CrossRender")
 rho = sqrt(x.^2 + y.^2);
 phi = atan2(y,x);
 thetaMax = acos((fnum-1)/(fnum+1));
 [Exp,Eyp,Ezp] = arrayfun(@(r,p) EPeatross(z,r,p,fnum,thetaMax),rho,phi);
-FieldCrossRender(x, y, z,Exp,Eyp,Ezp,2);
 
 %% show result w/ diagnostic plots
-FieldCrossRender(x, y, z, Ex, Ey, Ez,1);
-%FieldCrossRender(x, y, z,Exs,Eys,Ezs,2);
-FieldCrossRender(x, y, z,Exp,Eyp,Ezp,2);
+test
+%FieldCrossRender(x, y, z, Ex, Ey, Ez, 1);
+%fig = gcf; fig.Name = "CylinderIntegral";
+%FieldCrossRender(x, y, z,Exs,Eys,Ezs, 2);
+%FieldCrossRender(x, y, z,Exp,Eyp,Ezp, 2);
+%fig = gcf; fig.Name = "EPeatross";
