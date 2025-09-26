@@ -17,24 +17,26 @@ ymin = min(yrange); ymax = max(yrange);
 
 %% overall figure layout
 figUnits = 'Inches';
-figWidth = 6.7;
-figHeight = 4.6;
+figWidth = 6.7;%10;
+figHeight = 4.6;%6.9;
 % where to place figure on the screen
 if nargin<7
     figOffset = 0;
 elseif figNum==1
-    figOffset = -3.4;
+    figOffset = -figWidth/2 - 0.04;
 elseif figNum==2
-    figOffset = 3.4;
+    figOffset = figWidth/2 + 0.04;
 else
     figOffset = 0;
 end
-ff = figure('Units',figUnits,'Position',[5+figOffset 4 figWidth figHeight+.3]);
+ff = figure('Units',figUnits,'Position',[6+figOffset 4 figWidth figHeight+.3]);
 ff.InvertHardcopy = 'off';
 ff.Color = 'white';
 
-% FIXME: relative polarization component
-p = ones(size(Ex));
+% apply global phase offset based on max value of Ex
+Ex0complex = max(Ex,[],"all");
+phsglobal = conj(Ex0complex)/abs(Ex0complex);
+
 % interpolate string of points from each matrix to get cross sections
 Exf = interp2(x,y,Ex,xrange,0*yrange); % FIXME: xo,yo
 Eyf = interp2(x,y,Ey,sqrt(0.5)*xrange,sqrt(0.5)*yrange);
@@ -43,9 +45,9 @@ Ezf = interp2(x,y,Ez,xrange,0*yrange);
 % upper left axes: x-component
 ax2=axes('position',[.05 0.49 .25 .33]);
 % render complex phase
-Ex0 = max(abs(Ex),[],"all");
+Ex0=abs(Ex0complex);
 fprintf("Ex0=%f ",Ex0);
-image([xmin xmax],[ymin ymax],PhaseColor(p.*Ex/Ex0,5));
+image([xmin xmax],[ymin ymax],PhaseColor(Ex/Ex0*phsglobal,5));
 set(ax2,'YDir','normal'); % image() reverses y-axis coordinates
 axis square;
 axis off;
@@ -64,9 +66,9 @@ hold off
 % upper middle axes: y-component
 ay2=axes('position',[.38 0.49 .25 .33]);
 % render complex phase
-Ey0 = max(max(abs(Ey)));
+Ey0 = abs(max(Ey,[],"all"));
 fprintf("Ey0=%f ",Ey0);
-image([xmin xmax],[ymin ymax],PhaseColor(p.*Ey/Ey0,5));
+image([xmin xmax],[ymin ymax],PhaseColor(Ey/Ey0*phsglobal,5));
 set(ay2,'YDir','normal');
 axis square;
 axis off;
@@ -82,9 +84,9 @@ hold off
 % upper right axes: z-component
 az2=axes('position',[.71 0.49 .25 .33]);
 % render complex phase
-Ez0=max(max(abs(Ez)));
+Ez0 = abs(max(Ez,[],"all"));
 fprintf("Ez0=%f\n",Ez0);
-image([xmin xmax],[ymin ymax],PhaseColor(p.*Ez/Ez0,5));
+image([xmin xmax],[ymin ymax],PhaseColor(Ez/Ez0*phsglobal,5));
 set(az2,'YDir','normal');
 axis square;
 axis off;
