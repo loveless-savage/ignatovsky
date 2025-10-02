@@ -24,7 +24,7 @@ yrange = ymin:dy:ymax;
 [x,y] = meshgrid(xrange,yrange);
 
 %% for each point on observation plane, integrate fields on source plane
-[Ex,Ey,Ez,Bx,By,Bz] = IgnatovskyIntegral(x,y,z,t);
+%[Ex,Ey,Ez,Bx,By,Bz] = IgnatovskyIntegral(x,y,z,t);
 %% compare w/ Singh model
 %[Exs,Eys,Ezs,Bxs,Bys,Bzs] = IgnatovskyIntegral(x,y,z,t);
 %% Dr Peatross code for comparison

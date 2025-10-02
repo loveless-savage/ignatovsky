@@ -79,8 +79,8 @@ for m=1:numel(x)
     Ez_intg = -2i*sin(theta).*fac.*cos(phi(m)).*sqrt(chi).*besselj(1,arg) ...
 		* thetaMax/N;
 	
-    Ex(m)=sum(Ex_intg,"all");
-    Ey(m)=sum(Ey_intg,"all");
-    Ez(m)=sum(Ez_intg,"all");
+    Ex(m)=1i*k*f*sum(Ex_intg,"all");
+    Ey(m)=1i*k*f*sum(Ey_intg,"all");
+    Ez(m)=1i*k*f*sum(Ez_intg,"all");
 
 end

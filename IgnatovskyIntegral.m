@@ -9,13 +9,13 @@ wmirror = 0.5*f/fnum;
 % mirror radius: a little wider than the beam to capture rim of Gaussian
 D = 1.8*wmirror;
 % integration resolution
-N = 65;
+N = 513;
 % integration boundaries
 [xmin,xmax]=deal(-D,D);
 [ymin,ymax]=deal(-D,D);
 % step sizes
-xrange = xmin:(xmax-xmin)/N:xmax;
-yrange = ymin:(ymax-ymin)/N:ymax;
+xrange = xmin:(xmax-xmin)/(N-1):xmax;
+yrange = ymin:(ymax-ymin)/(N-1):ymax;
 % FIXME: rename / refactor as dx,dy?
 % mirror-space cartesian coordinates
 [xi,yi] = meshgrid(xrange,yrange);
