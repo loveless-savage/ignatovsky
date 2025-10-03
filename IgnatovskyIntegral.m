@@ -3,13 +3,21 @@ function [Ex,Ey,Ez,Bx,By,Bz]=IgnatovskyIntegral(x,y,z,t)
 global k lambda fnum w0 z0 f;
 % TODO: add tau to pulse in time
 
-%% mirror constants
-% beam width at mirror
+%% mirror + beam setup
+% on-axis beam width at mirror
 wmirror = 0.5*f/fnum;
 % mirror radius: a little wider than the beam to capture rim of Gaussian
-D = 1.8*wmirror;
+D = 4.0*wmirror;
+% actual beam width at mirror (hitting off-axis)
+wbeam = 0.5*wmirror;
+% OAP angle
+theta = deg2rad(30);
+% azimuthal angle relative to polarization
+phi = 0;
+% off-axis center of beam
+[x0,y0] = deal(1.7,0);
 % integration resolution
-N = 513;
+N = 65;
 % integration boundaries
 [xmin,xmax]=deal(-D,D);
 [ymin,ymax]=deal(-D,D);
@@ -19,12 +27,14 @@ yrange = ymin:(ymax-ymin)/(N-1):ymax;
 % FIXME: rename / refactor as dx,dy?
 % mirror-space cartesian coordinates
 [xi,yi] = meshgrid(xrange,yrange);
-% radius on mirror
+% incident beam profile
+Env = exp(-((xi-x0).^2+(yi-y0).^2)/wbeam^2);
+
+%% initial conditions on mirror
+% radius of parabola
 rho2 = xi.^2 + yi.^2;
 % mirror depth
 zi = rho2/4/f - f;
-
-%% initial conditions on mirror
 % normalization constant for mirror-related unit vectors
 znorm = 1 + rho2/4/f^2;
 % propagation direction off of all points on the mirror
@@ -38,14 +48,6 @@ pez = xi/f./znorm;
 pbx = pey;
 pby = (1+(xi.^2-yi.^2)/4/f^2)./znorm;
 pbz = yi/f./znorm;
-% incident beam profile: Gaussian is a good default
-Env = exp(-rho2/wmirror^2);
-% mask matrix
-mask = (rho2<D^2);
-kx(~mask)=0; pex(~mask)=0; pbx(~mask)=0;
-ky(~mask)=0; pey(~mask)=0; pby(~mask)=0;
-kz(~mask)=0; pez(~mask)=0; pbz(~mask)=0;
-Env(~mask)=0;
 
 %% integrate over all points within the mask
 Ex = 0*x;
@@ -54,6 +56,12 @@ Ez = Ex;
 Bx = Ex;
 By = Ex;
 Bz = Ex;
+% mask matrix
+mask = (rho2<D^2);
+kx(~mask)=0; pex(~mask)=0; pbx(~mask)=0;
+ky(~mask)=0; pey(~mask)=0; pby(~mask)=0;
+kz(~mask)=0; pez(~mask)=0; pbz(~mask)=0;
+Env(~mask)=0;
 
 for m=1:numel(x)
     % E-field scalar portion
