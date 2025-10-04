@@ -23,13 +23,13 @@ figHeight = 4.6;%6.9;
 if nargin<7
     figOffset = 0;
 elseif figNum==1
-    figOffset = -figWidth/2 - 0.04;
-elseif figNum==2
-    figOffset = figWidth/2 + 0.04;
+    figOffset = -(figWidth+0.08);
+elseif figNum==3
+    figOffset = (figWidth+0.08);
 else
     figOffset = 0;
 end
-ff = figure('Units',figUnits,'Position',[6+figOffset 4 figWidth figHeight+.3]);
+ff = figure('Units',figUnits,'Position',[9+figOffset 4 figWidth figHeight+.3]);
 ff.InvertHardcopy = 'off';
 ff.Color = 'white';
 
