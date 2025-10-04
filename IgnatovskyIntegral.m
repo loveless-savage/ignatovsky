@@ -1,6 +1,6 @@
 %% circular gaussian pulse, integrating off a full parabolic mirror.
-function [Ex,Ey,Ez,Bx,By,Bz]=IgnatovskyIntegral(x,y,z,t)
-global k lambda fnum w0 z0 f;
+function [Ex,Ey,Ez,Bx,By,Bz]=IgnatovskyIntegral(x,y,z,t,oap,oaphi)
+global k fnum w0 z0 f;
 % TODO: add tau to pulse in time
 
 %% mirror + beam setup
@@ -10,12 +10,9 @@ wmirror = 0.5*f/fnum;
 D = 4.0*wmirror;
 % actual beam width at mirror (hitting off-axis)
 wbeam = 0.5*wmirror;
-% OAP angle
-theta = deg2rad(30);
-% azimuthal angle relative to polarization
-phi = 0;
 % off-axis center of beam
-[x0,y0] = deal(1.7,0);
+x0 = 2*f*tan(oap/2)*cos(oaphi);
+y0 = 2*f*tan(oap/2)*sin(oaphi);
 % integration resolution
 N = 65;
 % integration boundaries
@@ -68,15 +65,15 @@ for m=1:numel(x)
     E_intg = Env(mask) ./ znorm(mask) ...
         .* exp(1i*k*(kx(mask).*x(m) ...
                    + ky(mask).*y(m) ...
-                   + kz(mask).* z )) ...
-        .* -1i*exp(1i*(k*z-t))*k/(2*pi*f) ...
+                   + kz(mask).*z(m))) ...
+        .* -1i.*exp(1i*(k*z(m)-t))*k/(2*pi*f) ...
 		.* (xmax-xmin)*(ymax-ymin)/N^2;
     % vector portions
     Ex(m) = sum(E_intg.*pex(mask),"all");
     Ey(m) = sum(E_intg.*pey(mask),"all");
     Ez(m) = sum(E_intg.*pez(mask),"all");
     % B-field scalar portion
-    %B_intg = -1i*exp(1i*(z-t))/(2*pi*f*c) * Env ./ znorm...
+    %B_intg = -1i*exp(1i*(z(m)-t))/(2*pi*f*c) * Env ./ znorm...
     %    .*exp(1i*(kx*x+ky*y+kz*z)) * (xmax-xmin)*(ymax-ymin)/N^2;
     % FIXME: because c=1, B_intg = E_intg
 end
