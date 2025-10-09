@@ -1,20 +1,21 @@
-global k fnum w0 z0 f;
+global k wbeam f fnum;
 %Ep=sqrt(1e18/2.146e18); % sqrt of intensity
 lambda = 1;%2*pi; % wavelength = 0.8e-6 m
 k = 2*pi/lambda; % wave number
-fnum = 1; % asymptotic cone angle of beam -- < 3 is a pretty wide focus
-w0 = 2*lambda*fnum/pi; % beam waist = 3.2e-6 m
-z0 = pi/lambda*w0^2; % rayleigh range = 40.2e-6 m
-f = 10*z0; % focal length of parabolic mirror: should be further than z0
-%tau = 2*pi*12; % pulse duration in radians = 40e-15 s
+wbeam = 1; % width of incident beam
+f = 12; % focal length of parabolic mirror: should be further than z0
+
+oap = 0; % OAP angle
+oaphi = 0; % azimuthal angle of OAP cut relative to polarization
 
 zplane = 0;%-f; % displacement from focal plane
 t = 0; % time since peak of pulse hits
 
-% OAP angle
-oap = 0;
-% azimuthal angle of OAP cut relative to polarization
-oaphi = 0;
+% derived beam parameters
+w0 = lambda*f/wbeam/pi; % beam waist = 3.2e-6 m
+z0 = pi/lambda*w0^2; % rayleigh range = 40.2e-6 m
+fnum = 0.5*f/wbeam; % asymptotic cone angle of beam -- < 3 is a pretty wide focus
+%tau = 2*pi*12; % pulse duration in radians = 40e-15 s
 
 %% set up grids for observation plane
 N = 41;
@@ -35,7 +36,7 @@ z = x*0+zplane;
 [Exp,Eyp,Ezp] = IgnatovskyIntegral(x, y, z, t, oap, oaphi);
 
 %% show result w/ diagnostic plots
-%test
+test
 %FieldCrossRender(x, y, z, Ex, Ey, Ez, 1);
 %fig = gcf; fig.Name = "CylinderIntegral";
 %FieldCrossRender(x, y, z,Exs,Eys,Ezs, 2);

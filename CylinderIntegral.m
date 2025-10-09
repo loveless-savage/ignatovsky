@@ -1,6 +1,6 @@
 %% temporary guy
 function [Ex, Ey, Ez] = CylinderIntegral(x, y, z, t)
-global k lambda fnum w0 z0 f tau;
+global k lambda fnum f tau;
 % TODO: pulse
 
 %% mirror constants

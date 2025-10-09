@@ -1,23 +1,19 @@
 %% circular gaussian pulse, integrating off a full parabolic mirror.
 function [Ex,Ey,Ez,Bx,By,Bz]=IgnatovskyIntegral(x,y,z,t,oap,oaphi)
-global k fnum w0 z0 f;
+global k wbeam f;
 % TODO: add tau to pulse in time
 
 %% mirror + beam setup
-% on-axis beam width at mirror
-wmirror = 0.5*f/fnum;
 % mirror radius: a little wider than the beam to capture rim of Gaussian
-D = 4.0*wmirror;
-% actual beam width at mirror (hitting off-axis)
-wbeam = 0.5*wmirror;
+D = 4.0*wbeam;
 % off-axis center of beam
 x0 = 2*f*tan(oap/2)*cos(oaphi);
 y0 = 2*f*tan(oap/2)*sin(oaphi);
 % integration resolution
 N = 65;
 % integration boundaries
-[xmin,xmax]=deal(-D,D);
-[ymin,ymax]=deal(-D,D);
+[xmin,xmax]=deal(x0-D,x0+D);
+[ymin,ymax]=deal(y0-D,y0+D);
 % step sizes
 xrange = xmin:(xmax-xmin)/(N-1):xmax;
 yrange = ymin:(ymax-ymin)/(N-1):ymax;

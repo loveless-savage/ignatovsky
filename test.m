@@ -13,7 +13,7 @@ oap = deg2rad(15);
 % off-axis, viewing plane rotated halfway between
 [xo,yo,zo] = rot(x,y,z,-oap/2,oaphi);
 [Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
-[Ex,Ey,Ez] = rot(Exo,Eyo,Ezo,oap,oaphi);
+[Ex,Ey,Ez] = rot(Exo,Eyo,Ezo,oap/2,oaphi);
 
 %% show result w/ diagnostic plots
 FieldCrossRender(x, y, zplane,Exp,Eyp,Ezp, 2);
