@@ -1,30 +1,22 @@
 close all;
 oap = deg2rad(15);
+oaprange = deg2rad(0:0.5:15);
 
-% off-axis, viewing plane unaltered
-[xo,yo,zo] = rot(x,y,z,0,oaphi);
-[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
-[Exq,Eyq,Ezq] = rot(Exo,Eyo,Ezo,0,oaphi);
+Exr = zeros([size(x) length(oaprange)]);
+Eyr = Exr;
+Ezr = Exr;
 
-% off-axis, viewing plane rotated halfway between
-[xo,yo,zo] = rot(x,y,z,-oap/2,oaphi);
-[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
-[Ex,Ey,Ez] = rot(Exo,Eyo,Ezo,oap/2,oaphi);
-
-% off-axis, viewing plane rotated orthogonal to beam
-[xo,yo,zo] = rot(x,y,z,-oap+0.01,oaphi);
-[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
-[Exr,Eyr,Ezr] = rot(Exo,Eyo,Ezo,oap-0.01,oaphi);
+for n = 1:length(oaprange)
+	[xo, yo, zo]  = rot(x,y,z,-oaprange(n),oaphi);
+	[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
+	[Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n)] = rot(Exo,Eyo,Ezo,oaprange(n),oaphi);
+end
 
 %% show result w/ diagnostic plots
-FieldCrossRender(x, y, zplane,Exp,Eyp,Ezp, 2);
-fig = gcf; fig.Name = "theta=0";
-FieldCrossRender(x, y, zplane, Exq,Eyq,Ezq, 1);
-fig = gcf; fig.Name = "theta=15,plane=0";
-FieldCrossRender(x, y, zplane, Ex, Ey, Ez, 2);
-fig = gcf; fig.Name = "theta=15,plane=7.5";
-FieldCrossRender(x, y, zplane, Exr,Eyr,Ezr, 3);
-fig = gcf; fig.Name = "theta=15,plane=14.99";
-%Exr = abs(Exp)-abs(Ex);
-%centErr = max(Exr,[],"all")/max(abs(Exp),[],"all");
-%fprintf("center error = %d\n",centErr);
+F = FieldCrossRender(x, y, zplane,Exr(:,:,1),Eyr(:,:,1),Ezr(:,:,1), 7.5,4.0);%9.0,8.0);
+F.fig.Name = "theta=15,plane=0";
+for n = 2:length(oaprange)
+	pause(0.2);
+	F.Render(x, y, zplane,Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n));
+	F.fig.Name = "theta=15,plane="+string(rad2deg(oaprange(n)));
+end

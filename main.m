@@ -33,7 +33,7 @@ z = x*0+zplane;
 %% for each point on observation plane, integrate fields on source plane
 %[Ex,Ey,Ez,Bx,By,Bz] = IgnatovskyIntegral(x,y,z,t,oap,oaphi);
 %% compare w/ on-axis
-[Exp,Eyp,Ezp] = IgnatovskyIntegral(x, y, z, t, oap, oaphi);
+%[Exp,Eyp,Ezp] = IgnatovskyIntegral(x, y, z, t, oap, oaphi);
 
 %% show result w/ diagnostic plots
 test
