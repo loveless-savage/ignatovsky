@@ -3,7 +3,7 @@ global k wbeam f fnum;
 lambda = 1;%2*pi; % wavelength = 0.8e-6 m
 k = 2*pi/lambda; % wave number
 wbeam = 1; % width of incident beam
-f = 12; % focal length of parabolic mirror: should be further than z0
+f = 3; % focal length of parabolic mirror: should be further than z0
 
 oap = 0; % OAP angle
 oaphi = 0; % azimuthal angle of OAP cut relative to polarization
@@ -31,7 +31,18 @@ yrange = ymin:dy:ymax;
 z = x*0+zplane;
 
 %% for each point on observation plane, integrate fields on source plane
-%[Ex,Ey,Ez,Bx,By,Bz] = IgnatovskyIntegral(x,y,z,t,oap,oaphi);
+oap = deg2rad(15);
+oaprange = deg2rad(0:0.5:15);
+
+Exr = zeros([size(x) length(oaprange)]);
+Eyr = Exr;
+Ezr = Exr;
+
+for n = 1:length(oaprange)
+	[xo, yo, zo]  = rot(x,y,z,-oaprange(n),oaphi);
+	[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
+	[Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n)] = rot(Exo,Eyo,Ezo,oaprange(n),oaphi);
+end
 %% compare w/ on-axis
 %[Exp,Eyp,Ezp] = IgnatovskyIntegral(x, y, z, t, oap, oaphi);
 
