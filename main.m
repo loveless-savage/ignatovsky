@@ -47,7 +47,7 @@ end
 %[Exp,Eyp,Ezp] = IgnatovskyIntegral(x, y, z, t, oap, oaphi);
 
 %% show result w/ diagnostic plots
-test
+FieldCrossMovie
 %FieldCrossRender(x, y, z, Ex, Ey, Ez, 1);
 %fig = gcf; fig.Name = "CylinderIntegral";
 %FieldCrossRender(x, y, z,Exs,Eys,Ezs, 2);

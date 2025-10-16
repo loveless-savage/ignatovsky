@@ -1,12 +1,11 @@
-close all;
-
 %% show result w/ diagnostic plots
-F = FieldCrossRender(x, y, zplane,Exr(:,:,1),Eyr(:,:,1),Ezr(:,:,1), 7.5,4.0);%9.0,8.0);
+F = FieldCrossRender(x, y, z, Exr(:,:,1),Eyr(:,:,1),Ezr(:,:,1), ...
+	7.5,4.0, "$\\theta = %3.2f^\\circ$");%9.0,8.0);
 F.fig.Name = "theta=15,plane=0";
 F.fig.UserData = 1;
-F.fig.KeyReleaseFcn = {@slide,n,oaprange,F,x,y,zplane,Exr,Eyr,Ezr};
+F.fig.KeyReleaseFcn = {@slide,n,oaprange,F,x,y,z,Exr,Eyr,Ezr};
 
-function slide(src,event,n,oaprange,F,x,y,zplane,Exr,Eyr,Ezr)
+function slide(src,event,n,oaprange,F,x,y,z,Exr,Eyr,Ezr)
 	n = src.UserData;
 	switch event.Key
 		case {'leftarrow','uparrow','k'}
@@ -24,8 +23,8 @@ function slide(src,event,n,oaprange,F,x,y,zplane,Exr,Eyr,Ezr)
 		otherwise
 			return;
 	end
-	fprintf("n=%d ",n);
-	F.Render(x, y, zplane,Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n));
+	fprintf("n=%d\n",n);
+	F.Render(x, y, z, Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n),rad2deg(oaprange(n)));
 	F.fig.Name = "theta=15,plane="+string(rad2deg(oaprange(n)))+" ["+string(n)+"]";
 	src.UserData = n;
 end
