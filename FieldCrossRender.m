@@ -15,9 +15,11 @@ properties
 	ax1
 	ay1
 	az1
+	% slicing parameter label
+	paramText = "$z = %3.2f \\lambda$";
 end
 methods
-function F = FieldCrossRender(x, y, z, Ex, Ey, Ez, figX, figY)
+function F = FieldCrossRender(x, y, z, Ex, Ey, Ez, figX, figY, paramText)
 	% required variables:
 	% [x, y]         <-- observation coordinates (grids)
 	% z              <-- slice position along the beam (scalar constant)
@@ -32,14 +34,17 @@ function F = FieldCrossRender(x, y, z, Ex, Ey, Ez, figX, figY)
 	if nargin>7
 		F.figY = figY;
 	end
+	if nargin>8
+		F.paramText = paramText;
+	end
 	F.fig = figure('Units','Inches','Position',[F.figX F.figY F.figWidth F.figHeight+.3]);
 	F.fig.InvertHardcopy = 'off';
 	F.fig.Color = 'white';
 
-	F = F.Render(x, y, z, Ex, Ey, Ez);
+	F = F.Render(x, y, z, Ex, Ey, Ez, 0);
 end
 
-function F = Render(F, x, y, z, Ex, Ey, Ez)
+function F = Render(F, x, y, z, Ex, Ey, Ez, paramVal)
 	clf(F.fig);
 	%% boundary information about observation plane from given meshgrids
 	% value ranges
@@ -62,7 +67,6 @@ function F = Render(F, x, y, z, Ex, Ey, Ez)
 	F.ax2=axes('position',[.05 0.49 .25 .33]);
 	% render complex phase
 	Ex0=abs(Ex0complex);
-	fprintf("Ex0=%f ",Ex0);
 	image([xmin xmax],[ymin ymax],PhaseColor(Ex/Ex0*phsglobal,5));
 	set(F.ax2,'YDir','normal'); % image() reverses y-axis coordinates
 	axis square;
@@ -72,9 +76,13 @@ function F = Render(F, x, y, z, Ex, Ey, Ez)
 	title(['$E_x (\rho,\phi)/ (' num2str(round(Ex0*10^xdigits)/10^xdigits) ' E_0)$'], ...
 		'Interpreter','latex')
 	hold on
-	% included with this plot is the upper-left label reporting z-value
-	text(xmin,xmax*1.6,['$z = ' sprintf('%3.2f',z) ' \lambda$'], ...
-		'Interpreter','latex','FontSize',14);
+
+	% included with the upper left plot is the label reporting our slicing parameter
+	% (z-plane, slicing angle, etc)
+	if nargin>7
+		text(xmin,xmax*1.6,sprintf(F.paramText,paramVal), ...
+			'Interpreter','latex','FontSize',14);
+	end
 	% cross-section line
 	plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
 	hold off
@@ -83,7 +91,6 @@ function F = Render(F, x, y, z, Ex, Ey, Ez)
 	F.ay2=axes('position',[.38 0.49 .25 .33]);
 	% render complex phase
 	Ey0 = abs(max(Ey,[],"all"));
-	fprintf("Ey0=%f ",Ey0);
 	image([xmin xmax],[ymin ymax],PhaseColor(Ey/Ey0*phsglobal,5));
 	set(F.ay2,'YDir','normal');
 	axis square;
@@ -101,7 +108,6 @@ function F = Render(F, x, y, z, Ex, Ey, Ez)
 	F.az2=axes('position',[.71 0.49 .25 .33]);
 	% render complex phase
 	Ez0 = abs(max(Ez,[],"all"));
-	fprintf("Ez0=%f\n",Ez0);
 	image([xmin xmax],[ymin ymax],PhaseColor(Ez/Ez0*phsglobal,5));
 	set(F.az2,'YDir','normal');
 	axis square;
