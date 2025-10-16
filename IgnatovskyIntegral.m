@@ -1,7 +1,6 @@
 %% circular gaussian pulse, integrating off a full parabolic mirror.
 function [Ex,Ey,Ez,Bx,By,Bz]=IgnatovskyIntegral(x,y,z,t,oap,oaphi)
 global k wbeam f;
-% TODO: add tau to pulse in time
 
 %% mirror + beam setup
 % mirror radius: a little wider than the beam to capture rim of Gaussian
@@ -49,8 +48,8 @@ Ez = Ex;
 Bx = Ex;
 By = Ex;
 Bz = Ex;
-% mask matrix
-mask = (rho2<D^2);
+% mask matrix to reduce integration steps
+mask = (Env>1e-4);
 kx(~mask)=0; pex(~mask)=0; pbx(~mask)=0;
 ky(~mask)=0; pey(~mask)=0; pby(~mask)=0;
 kz(~mask)=0; pez(~mask)=0; pbz(~mask)=0;
@@ -73,19 +72,4 @@ for m=1:numel(x)
     %    .*exp(1i*(kx*x+ky*y+kz*z)) * (xmax-xmin)*(ymax-ymin)/N^2;
     % FIXME: because c=1, B_intg = E_intg
 end
-
-%Ex = kx;
-%Ey = ky;
-%Ez = kz;
-%Bx = pbx;
-%By = pby;
-%Bz = pbz;
-
-% vector elements
-%Ex=real(field);
-%Ey=real(xi.*yi./(2*Z.^2).*field);
-%Ez=real(-i*xi./Z.*field);
-%Bx=1*Ey;
-%By=1*Ex;
-%Bz=1*real(-i*yi./Z.*field);
 
