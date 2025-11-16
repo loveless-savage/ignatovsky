@@ -5,8 +5,8 @@ properties
 	%% overall figure layout
 	figX = 6.9;%0.0,6.9,13.8
 	figY = 4.0;
-	figWidth = 10;%6.7;
-	figHeight = 6.9;%4.6;
+	figWidth = 15;%6.7;
+	figHeight = 10.35;%4.6;
 	% upper plots
 	ax2
 	ay2
@@ -28,13 +28,14 @@ function F = FieldCrossRender(x, y, z, Ex, Ey, Ez, figX, figY, paramText)
 	% @PhaseColor    <-- colormap
 
 	% where to place figure on the screen
-	if nargin>6
-		F.figX = figX;
-	end
 	if nargin>7
+		F.figX = figX;
 		F.figY = figY;
 	end
-	if nargin>8
+	if nargin==7
+		F.paramText = figX;
+	end
+	if nargin==9
 		F.paramText = paramText;
 	end
 	F.fig = figure('Units','Inches','Position',[F.figX F.figY F.figWidth F.figHeight+.3]);
