@@ -5,8 +5,8 @@ properties
 	%% overall figure layout
 	figX = 6.9;%0.0,6.9,13.8
 	figY = 4.0;
-	figWidth = 15;%6.7;
-	figHeight = 10.35;%4.6;
+	figWidth = 10;%15;%6.7;
+	figHeight = 6.9;%10.35;%4.6;
 	% upper plots
 	ax2
 	ay2
