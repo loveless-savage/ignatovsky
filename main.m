@@ -18,8 +18,8 @@ fnum = 0.5*f/wbeam; % asymptotic cone angle of beam -- < 3 is a pretty wide focu
 
 %% set up grids for observation plane
 N = 65;
-xmin = pi*w0*sqrt(1+zplane^2/z0^2);
-xmax = pi*w0*sqrt(1+zplane^2/z0^2);
+xmin = -1.5*pi*w0*sqrt(1+zplane^2/z0^2);
+xmax = 1.5*pi*w0*sqrt(1+zplane^2/z0^2);
 dx = (xmax-xmin)/(N-1);
 xrange = xmin:dx:xmax;
 ymin = xmin;
@@ -28,6 +28,9 @@ dy = (ymax-ymin)/(N-1);
 yrange = ymin:dy:ymax;
 [x,y] = meshgrid(xrange,yrange);
 z = x*0+zplane;
+
+%% get a frame of reference
+[Ex0,Ey0,Ez0] = IgnatovskyIntegral(x,y,z,t,0,0);
 
 %% for each point on observation plane, integrate fields on source plane
 oaphirange = 0:15:360;
@@ -39,6 +42,9 @@ for n=1:length(oaphirange)
 	[xo, yo, zo]  = rot(x,y,z,-oap,oaphi);
 	[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
 	[Ex(:,:,n),Ey(:,:,n),Ez(:,:,n)] = rot(Exo,Eyo,Ezo,oap,oaphi);
+	Ex(:,:,n) = Ex(:,:,n) - Ex0;
+	Ey(:,:,n) = Ey(:,:,n) - Ey0;
+	Ez(:,:,n) = Ez(:,:,n) - Ez0;
 	n
 end
 
