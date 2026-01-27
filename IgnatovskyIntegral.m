@@ -34,12 +34,7 @@ kx = -xi/f./znorm;
 ky = -yi/f./znorm;
 kz = 2./znorm-1;
 % E and B field polarizations
-pex = (1-(xi.^2-yi.^2)/4/f^2)./znorm;
-pey = -xi.*yi/2/f^2./znorm;
-pez = xi/f./znorm;
-pbx = pey;
-pby = (1+(xi.^2-yi.^2)/4/f^2)./znorm;
-pbz = yi/f./znorm;
+[pex,pey,pez,pbx,pby,pbz] = pvec(xi,yi);
 
 %% integrate over all points within the mask
 Ex = 0*x;
