@@ -3,26 +3,8 @@ function [Ex,Ey,Ez,Bx,By,Bz]=IgnatovskyIntegral(x,y,z,t,oap,oaphi)
 global k wbeam f;
 
 %% mirror + beam setup
-% mirror radius: a little wider than the beam to capture rim of Gaussian
-D = 4.0*wbeam;
-% off-axis center of beam
-x0 = 2*f*tan(oap/2)*cos(oaphi);
-y0 = 2*f*tan(oap/2)*sin(oaphi);
-% integration resolution
-N = 65;
-% integration boundaries
-[xmin,xmax]=deal(x0-D,x0+D);
-[ymin,ymax]=deal(y0-D,y0+D);
-% step sizes
-xrange = xmin:(xmax-xmin)/(N-1):xmax;
-yrange = ymin:(ymax-ymin)/(N-1):ymax;
-% FIXME: rename / refactor as dx,dy?
-% mirror-space cartesian coordinates
-[xi,yi] = meshgrid(xrange,yrange);
-% incident beam profile
-Env = exp(-((xi-x0).^2+(yi-y0).^2)/wbeam^2);
-
-%% initial conditions on mirror
+% set up coordinate grid against mirror surface, as well as laser envelope and integration differential
+[xi,yi,Env,dA] = mirror(oap,oaphi);
 % radius of parabola
 rho2 = xi.^2 + yi.^2;
 % mirror depth
@@ -56,8 +38,7 @@ for m=1:numel(x)
         .* exp(1i*k*(kx(mask).*x(m) ...
                    + ky(mask).*y(m) ...
                    + kz(mask).*z(m))) ...
-        .* -1i.*exp(1i*(k*f-t))*k/(2*pi*f) ...
-		.* (xmax-xmin)*(ymax-ymin)/N^2;
+        .* -1i.*exp(1i*(k*f-t))*k/(2*pi*f) .* dA;
     % vector portions
     Ex(m) = sum(E_intg.*pex(mask),"all");
     Ey(m) = sum(E_intg.*pey(mask),"all");
