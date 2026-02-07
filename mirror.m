@@ -1,4 +1,5 @@
-function [xi,yi,Env,dA] = mirror(oap,oaphi)
+%% build a grid of coordinates on a mirror surface, offset from the mirror axis
+function [xi,yi,Env,dA] = mirror(N,oap,oaphi)
 global k wbeam f;
 
 % mirror radius: a little wider than the beam to capture rim of Gaussian
@@ -6,8 +7,6 @@ D = 4.0*wbeam;
 % off-axis center of beam
 x0 = 2*f*tan(oap/2)*cos(oaphi);
 y0 = 2*f*tan(oap/2)*sin(oaphi);
-% integration resolution
-N = 65;
 % integration boundaries
 [xmin,xmax]=deal(x0-D,x0+D);
 [ymin,ymax]=deal(y0-D,y0+D);

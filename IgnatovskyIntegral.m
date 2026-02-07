@@ -3,8 +3,10 @@ function [Ex,Ey,Ez,Bx,By,Bz]=IgnatovskyIntegral(x,y,z,t,oap,oaphi)
 global k wbeam f;
 
 %% mirror + beam setup
+% integration resolution
+N = 65;
 % set up coordinate grid against mirror surface, as well as laser envelope and integration differential
-[xi,yi,Env,dA] = mirror(oap,oaphi);
+[xi,yi,Env,dA] = mirror(N,oap,oaphi);
 % radius of parabola
 rho2 = xi.^2 + yi.^2;
 % mirror depth
