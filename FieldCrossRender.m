@@ -91,7 +91,7 @@ function F = Render(F, x, y, z, Ex, Ey, Ez, paramVal)
 	% upper middle axes: y-component
 	F.ay2=axes('position',[.38 0.49 .25 .33]);
 	% render complex phase
-	Ey0 = abs(max(Ey,[],"all"));
+	Ey0 = max(abs(Ey),[],"all");
 	image([xmin xmax],[ymin ymax],PhaseColor(Ey/Ey0*phsglobal,5));
 	set(F.ay2,'YDir','normal');
 	axis square;
@@ -108,7 +108,7 @@ function F = Render(F, x, y, z, Ex, Ey, Ez, paramVal)
 	% upper right axes: z-component
 	F.az2=axes('position',[.71 0.49 .25 .33]);
 	% render complex phase
-	Ez0 = abs(max(Ez,[],"all"));
+	Ez0 = max(abs(Ez),[],"all");
 	image([xmin xmax],[ymin ymax],PhaseColor(Ez/Ez0*phsglobal,5));
 	set(F.az2,'YDir','normal');
 	axis square;
