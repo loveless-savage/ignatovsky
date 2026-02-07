@@ -1,11 +1,11 @@
-global k wbeam f fnum;
+global k wbeam z0 w0 f fnum;
 lambda = 0.8; % wavelength = 0.8e-6 m
 k = 2*pi/lambda; % wave number
 wbeam = 100; % width of incident beam
 f = 300; % focal length of parabolic mirror: should be further than z0
 
 oap = deg2rad(30); % OAP angle
-%oaphi = deg2rad(45); % azimuthal angle of OAP cut relative to polarization
+oaphi = deg2rad(45); % azimuthal angle of OAP cut relative to polarization
 
 zplane = 0;%-f; % displacement from focal plane
 t = 0; % time since peak of pulse hits
@@ -29,25 +29,44 @@ yrange = ymin:dy:ymax;
 [x,y] = meshgrid(xrange,yrange);
 z = x*0+zplane;
 
+%% mirror + beam setup
+% mirror-space cartesian coordinates
+[xi,yi,Env] = mirror(N,oap,oaphi);
+[pex,pey,pez] = pvec(xi,yi);
+pex = pex.*Env;
+pey = pey.*Env;
+pez = pez.*Env;
+
+%% compare full beam to Singh modes
+[Exi,Eyi,Ezi] = IgnatovskyIntegral(x,y,z,t,0,0);
+[Ex00,Ey00,Ez00] = E00(x,y,z);
+[Ex01,Ey01,Ez01] = E01(x,y,z);
+[Ex10,Ey10,Ez10] = E10(x,y,z);
+[Ex11,Ey11,Ez11] = E11(x,y,z);
+FieldCrossRender(x,y,z,Exi, Eyi, Ezi, 7.5,3.9,"$\\theta = 30^\\circ$")
+FieldCrossRender(x,y,z,Ex00,Ey00,Ez00,7.5,3.9,"$\\theta = 30^\\circ$")
+FieldCrossRender(x,y,z,Ex01,Ey01,Ez01,7.5,3.9,"$\\theta = 30^\\circ$")
+FieldCrossRender(x,y,z,Ex10,Ey10,Ez10,7.5,3.9,"$\\theta = 30^\\circ$")
+FieldCrossRender(x,y,z,Ex11,Ey11,Ez11,7.5,3.9,"$\\theta = 30^\\circ$")
+
 %% get a frame of reference
-[Ex0,Ey0,Ez0] = IgnatovskyIntegral(x,y,z,t,0,0);
+%[xo, yo, zo]  = rot(x,y,z,-oap,oaphi);
+%[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
+%[Ex,Ey,Ez] = rot(Exo,Eyo,Ezo,oap,oaphi);
 
 %% for each point on observation plane, integrate fields on source plane
-oaphirange = 0:15:360;
-Ex = zeros([size(x) length(oaphirange)]);
-Ey = Ex;
-Ez = Ex;
-for n=1:length(oaphirange)
-	oaphi=deg2rad(oaphirange(n));
-	[xo, yo, zo]  = rot(x,y,z,-oap,oaphi);
-	[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
-	[Ex(:,:,n),Ey(:,:,n),Ez(:,:,n)] = rot(Exo,Eyo,Ezo,oap,oaphi);
-	Ex(:,:,n) = Ex(:,:,n) - Ex0;
-	Ey(:,:,n) = Ey(:,:,n) - Ey0;
-	Ez(:,:,n) = Ez(:,:,n) - Ez0;
-	n
-end
-
-%% show result w/ diagnostic plots
-%FieldCrossRender(x,y,z,Ex,Ey,Ez,2.5,0.9,"$\\theta = 30^\\circ$")
-FieldCrossMovie(x,y,z,Ex,Ey,Ez,oaphirange,"orbit_theta30");
+%oaphirange = 0:15:360;
+%Ex = zeros([size(x) length(oaphirange)]);
+%Ey = Ex;
+%Ez = Ex;
+%for n=1:length(oaphirange)
+	%oaphi=deg2rad(oaphirange(n));
+	%[xo, yo, zo]  = rot(x,y,z,-oap,oaphi);
+	%[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
+	%[Ex(:,:,n),Ey(:,:,n),Ez(:,:,n)] = rot(Exo,Eyo,Ezo,oap,oaphi);
+	%Ex(:,:,n) = Ex(:,:,n) - Ex0;
+	%Ey(:,:,n) = Ey(:,:,n) - Ey0;
+	%Ez(:,:,n) = Ez(:,:,n) - Ez0;
+	%n
+%end
+%FieldCrossMovie(x,y,z,Ex,Ey,Ez,oaphirange,"orbit_theta30");
