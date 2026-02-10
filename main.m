@@ -31,28 +31,37 @@ z = x*0+zplane;
 
 %% mirror + beam setup
 % mirror-space cartesian coordinates
-[xi,yi,Env] = mirror(N,oap,oaphi);
-[pex,pey,pez] = pvec(xi,yi);
-pex = pex.*Env;
-pey = pey.*Env;
-pez = pez.*Env;
+%[xi,yi,Env] = mirror(N,oap,oaphi);
+%[pex,pey,pez] = pvec(xi,yi);
+%pex = pex.*Env;
+%pey = pey.*Env;
+%pez = pez.*Env;
 
-%% compare full beam to Singh modes
-[Exi,Eyi,Ezi] = IgnatovskyIntegral(x,y,z,t,0,0);
+%% examine Singh modes
 [Ex00,Ey00,Ez00] = E00(x,y,z);
-[Ex01,Ey01,Ez01] = E01(x,y,z);
 [Ex10,Ey10,Ez10] = E10(x,y,z);
+[Ex01,Ey01,Ez01] = E01(x,y,z);
 [Ex11,Ey11,Ez11] = E11(x,y,z);
-FieldCrossRender(x,y,z,Exi, Eyi, Ezi, 7.5,3.9,"$\\theta = 30^\\circ$")
-FieldCrossRender(x,y,z,Ex00,Ey00,Ez00,7.5,3.9,"$\\theta = 30^\\circ$")
-FieldCrossRender(x,y,z,Ex01,Ey01,Ez01,7.5,3.9,"$\\theta = 30^\\circ$")
-FieldCrossRender(x,y,z,Ex10,Ey10,Ez10,7.5,3.9,"$\\theta = 30^\\circ$")
-FieldCrossRender(x,y,z,Ex11,Ey11,Ez11,7.5,3.9,"$\\theta = 30^\\circ$")
+%FieldCrossRender(x,y,z,Ex00,Ey00,Ez00,0,4.5,"$E_{00}$")
+%FieldCrossRender(x,y,z,Ex10,Ey10,Ez10,10,4.5,"$E_{10}$")
+%FieldCrossRender(x,y,z,Ex01,Ey01,Ez01,0,0.0,"$E_{01}$")
+%FieldCrossRender(x,y,z,Ex11,Ey11,Ez11,10,0.0,"$E_{11}$")
+tmix=0:pi/12:(pi*2-pi/12);
+Exmix=zeros([size(Ex10) length(tmix)]);
+Eymix=Exmix;
+Ezmix=Exmix;
+for n=1:length(tmix)
+	Exmix(:,:,n) = cos(tmix(n))*Ex10 + sin(tmix(n))*Ex01;
+	Eymix(:,:,n) = cos(tmix(n))*Ey10 + sin(tmix(n))*Ey01;
+	Ezmix(:,:,n) = cos(tmix(n))*Ez10 + sin(tmix(n))*Ez01;
+end
+FieldCrossMovie(x,y,z,Exmix,Eymix,Ezmix,180/pi*tmix,"mode_mix");
 
 %% get a frame of reference
 %[xo, yo, zo]  = rot(x,y,z,-oap,oaphi);
 %[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
 %[Ex,Ey,Ez] = rot(Exo,Eyo,Ezo,oap,oaphi);
+%FieldCrossRender(x,y,z,Ex,Ey,Ez,0,3.9,"$Ignatovsky (\\theta=30^\\circ,\\phi=90^\\circ)$")
 
 %% for each point on observation plane, integrate fields on source plane
 %oaphirange = 0:15:360;
