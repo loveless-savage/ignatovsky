@@ -1,8 +1,8 @@
 %% show result w/ diagnostic plots
 function F = FieldCrossMovie(x, y, z, Exr, Eyr, Ezr, oaphirange, movieName)
 F = FieldCrossRender(x, y, z, Exr(:,:,1),Eyr(:,:,1),Ezr(:,:,1), ...
-	"$cos(%3.0f)E_{10}+sin(%3.0f)E_{01}$");
-	%"$\\phi = %3.2f^\\circ$");
+	"$\\phi = %3.2f^\\circ$");
+	%"$cos(%3.0f)E_{10}+sin(%3.0f)E_{01}$");
 F.fig.Name = "theta=30,phi=0 [1]";
 
 if nargin<8 % interactive: use arrow keys to switch between frames

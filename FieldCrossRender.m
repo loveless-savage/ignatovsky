@@ -81,7 +81,7 @@ function F = Render(F, x, y, z, Ex, Ey, Ez, paramVal)
 	% included with the upper left plot is the label reporting our slicing parameter
 	% (z-plane, slicing angle, etc)
 	if nargin>7
-		text(xmin,xmax*1.6,sprintf(F.paramText,paramVal,paramVal), ...
+		text(xmin,xmax*1.6,sprintf(F.paramText,paramVal), ...
 			'Interpreter','latex','FontSize',14);
 	end
 	% cross-section line
