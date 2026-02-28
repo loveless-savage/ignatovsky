@@ -48,8 +48,12 @@ for n=1:length(oaprange)
 	zo = zo *sec(oap/2)^2;
 	[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
 	[Ex(:,:,n),Ey(:,:,n),Ez(:,:,n)] = rot(Exo,Eyo,Ezo,oap,oaphi);
+	[Exp(:,:,n),Eyp(:,:,n),Ezp(:,:,n)] = Soap(x,y,z,oap,oaphi);
 	n
 end
 params = {'legend',false,'paramText','Ignatovsky ($\\theta=%d^\\circ$)'};
 FieldCrossMovie(x,y,z,Ex,Ey,Ez,oaprange, ...
 	live=true, renderParams=params);%, movieName="sweep_to_90_fscaled");
+params = {'legend',false,'paramText','SOAP ($\\theta=%d^\\circ$)'};
+FieldCrossMovie(x,y,z,Exp,Eyp,Ezp,oaprange, ...
+	live=true, renderParams=params);%, movieName="soap_to_90");

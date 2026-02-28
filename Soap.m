@@ -1,6 +1,6 @@
 %% mode 00 of the paraxial wave equation, as derived by Erikson & Singh
-function [Ex,Ey,Ez]=Soap(x,y,z,oaphi)
-global k f z0 w0;
+function [Ex,Ey,Ez]=Soap(x,y,z,oap,oaphi)
+global k z0 w0;
 
 % intermediate values
 Z=z0+i*z; % coherence length w/ z phase
@@ -9,8 +9,8 @@ scale=psi.*(sqrt(8)*z0./Z); % scalar field amplitude
 
 % vector elements
 Ex=scale;
-Ey=scale*i.*(-sin(oaphi).*x+cos(oaphi).*y)/f;
-Ez=scale*-i.*x./f;
+Ey=scale.*(x.*y/2./Z.^2 + i*tan(oap/2).*(cos(oaphi).*y-sin(oaphi).*x)./Z);
+Ez=scale*-i.*x./Z;
 %Bx=1*Ey;
 %By=1*Ex;
 %Bz=scale.*-i*y./Z;
