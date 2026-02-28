@@ -1,24 +1,40 @@
 %% show result w/ diagnostic plots
-function F = FieldCrossMovie(x, y, z, Exr, Eyr, Ezr, oaphirange, movieName)
-F = FieldCrossRender(x, y, z, Exr(:,:,1),Eyr(:,:,1),Ezr(:,:,1), ...
-	"$\\phi = %3.2f^\\circ$");
-	%"$cos(%3.0f)E_{10}+sin(%3.0f)E_{01}$");
-F.fig.Name = "theta=30,phi=0 [1]";
+function F = FieldCrossMovie(x, y, z, Exr, Eyr, Ezr, paramVals, options) %movieName)
+arguments
+	x double % observation coordinates (grids)
+	y double
+	z double
+	Exr double % field components
+	Eyr double
+	Ezr double
+	paramVals double % independent variable varying between frames
+	% name-value arguments
+	options.renderParams cell = {'legend',false};
+	options.live logical = false % use arrow keys to interact?
+	options.windowName string
+	options.movieName string % TODO: default?
+end
 
-if nargin<8 % interactive: use arrow keys to switch between frames
+F = FieldCrossRender(x, y, Exr(:,:,1),Eyr(:,:,1),Ezr(:,:,1), options.renderParams{:});
+if isfield(options,'windowName')
+	F.fig.Name = sprintf(options.windowName+" [%d]",paramVals(n),1);
+end
+
+% interactive: use arrow keys to switch between frames
+if isfield(options,'live') && options.live
 	F.fig.UserData = 1;
-	F.fig.KeyReleaseFcn = {@slide,oaphirange,F,x,y,z,Exr,Eyr,Ezr};
-
-else % non-interactive: print series to video file
-	mkdir("figures/"+movieName)
-	for n = 1:length(oaphirange)
+	F.fig.KeyReleaseFcn = {@slide,paramVals,F,x,y,z,Exr,Eyr,Ezr};
+% non-interactive: print series to video file
+else
+	mkdir("figures/"+options.movieName)
+	for n = 1:length(paramVals)
 		fprintf("n=%d\n",n);
-		F.Render(x, y, z, Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n),oaphirange(n));
-		saveas(F.fig,"figures/"+movieName+"/"+num2str(n,"%02d")+".tif");
+		F.Render(x, y, Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n),paramVals(n));
+		saveas(F.fig,"figures/"+options.movieName+"/"+num2str(n,"%02d")+".tif");
 	end
 end
 
-function slide(src,event,oaphirange,F,x,y,z,Exr,Eyr,Ezr)
+function slide(src,event,paramVals,F,x,y,z,Exr,Eyr,Ezr)
 	n = src.UserData;
 	switch event.Key
 		case {'leftarrow','uparrow','k'}
@@ -28,7 +44,7 @@ function slide(src,event,oaphirange,F,x,y,z,Exr,Eyr,Ezr)
 				return;
 			end
 		case {'rightarrow','downarrow','j'}
-			if n<length(oaphirange)
+			if n<length(paramVals)
 				n = n+1;
 			else
 				return;
@@ -37,8 +53,8 @@ function slide(src,event,oaphirange,F,x,y,z,Exr,Eyr,Ezr)
 			return;
 	end
 	fprintf("n=%d\n",n);
-	F.Render(x, y, z, Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n),oaphirange(n));
-	F.fig.Name = "theta=30,phi="+string(oaphirange(n))+" ["+string(n)+"]";
+	F.Render(x, y, Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n),paramVals(n));
+	F.fig.Name = "theta=30,phi="+string(paramVals(n))+" ["+string(n)+"]"; % TODO
 	src.UserData = n;
 end
 end

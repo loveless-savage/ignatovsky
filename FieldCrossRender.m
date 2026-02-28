@@ -1,51 +1,53 @@
 %% this script takes a cross section of the beam & compares models
 classdef FieldCrossRender
 properties
-	fig
-	%% overall figure layout
-	figX = 6.9;%0.0,6.9,13.8
-	figY = 4.0;
-	figWidth = 10;%15;%6.7;
-	figHeight = 6.9;%10.35;%4.6;
-	% upper plots
-	ax2
+	fig % figure itself
+	paramText = "$z = %3.2f \\lambda$"; % left corner text
+	drawLegend = false; % should we draw the legend?
+end
+properties (SetAccess = private)
+	ax2 % upper plots
 	ay2
 	az2
-	% lower plots
-	ax1
+	ax1 % lower plots
 	ay1
 	az1
-	% slicing parameter label
-	paramText = "$z = %3.2f \\lambda$";
 end
-methods
-function F = FieldCrossRender(x, y, z, Ex, Ey, Ez, figX, figY, paramText)
-	% required variables:
-	% [x, y]         <-- observation coordinates (grids)
-	% z              <-- slice position along the beam (scalar constant)
-	% [Ex, Ey, Ez]   <-- results of Ignatovsky Integration
-	% [Bx, By, Bz]   <-- TODO
-	% @PhaseColor    <-- colormap
 
-	% where to place figure on the screen
-	if nargin>7
-		F.figX = figX;
-		F.figY = figY;
+methods
+function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
+	arguments
+		x double % observation coordinates (grids)
+		y double
+		%z double % slice position along the beam (scalar constant)
+		Ex double % field components
+		Ey double
+		Ez double
+		% name-value arguments
+		options.figX double = 6.9 %0.0,6.9,13.8
+		options.figY double = 4.0
+		options.figWidth  double = 10 %15 %6.7
+		options.figHeight double = 6.9 %10.35 %4.6
+		options.paramText string = ''
+		options.legend logical = true
 	end
-	if nargin==7
-		F.paramText = figX;
+
+	if isfield(options,'paramText')
+		F.paramText = options.paramText;
 	end
-	if nargin==9
-		F.paramText = paramText;
+	if isfield(options,'legend')
+		F.drawLegend = options.legend;
 	end
-	F.fig = figure('Units','Inches','Position',[F.figX F.figY F.figWidth F.figHeight+.3]);
+
+	F.fig = figure('Units','Inches', ...
+					'Position',[options.figX options.figY options.figWidth options.figHeight+.3]);
 	F.fig.InvertHardcopy = 'off';
 	F.fig.Color = 'white';
 
-	F = F.Render(x, y, z, Ex, Ey, Ez, 0);
+	F = F.Render(x, y, Ex, Ey, Ez, 0);
 end
 
-function F = Render(F, x, y, z, Ex, Ey, Ez, paramVal)
+function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 	clf(F.fig);
 	%% boundary information about observation plane from given meshgrids
 	% value ranges
@@ -80,10 +82,8 @@ function F = Render(F, x, y, z, Ex, Ey, Ez, paramVal)
 
 	% included with the upper left plot is the label reporting our slicing parameter
 	% (z-plane, slicing angle, etc)
-	if nargin>7
-		text(xmin,xmax*1.6,sprintf(F.paramText,paramVal), ...
-			'Interpreter','latex','FontSize',14);
-	end
+	text(xmin,xmax*1.6,sprintf(F.paramText,paramVal), ...
+		'Interpreter','latex','FontSize',14);
 	% cross-section line
 	plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
 	hold off
@@ -138,8 +138,10 @@ function F = Render(F, x, y, z, Ex, Ey, Ez, paramVal)
 	title(['$\left| E_x(\rho,\phi=0) \right| / (' num2str(round(Ex0*10^xdigits)/10^xdigits) ' E_0)$'], ...
 		'Interpreter','latex')
 	% include a legend box in the upper-right corner of the figure
-	la=legend('Ignatovsky','Location','southwest');
-	set(la, 'Position',[0.75 0.9 .1 .05],'FontSize',8); % repositioned!
+	if F.drawLegend==1
+		la=legend('Ignatovsky','Location','southwest');
+		set(la, 'Position',[0.75 0.9 .1 .05],'FontSize',8); % repositioned!
+	end
 
 	% lower middle axes: y-cross section
 	F.ay1=axes('position',[.38 0.09 .25 .33]);

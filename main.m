@@ -5,7 +5,7 @@ wbeam = 100; % width of incident beam
 f = 300; % focal length of parabolic mirror: should be further than z0
 
 oap = deg2rad(30); % OAP angle
-oaphi = deg2rad(45); % azimuthal angle of OAP cut relative to polarization
+oaphi = 0;%deg2rad(45); % azimuthal angle of OAP cut relative to polarization
 
 zoffset = 0;%-f; % displacement from focal plane
 t = 0; % time since peak of pulse hits
@@ -18,31 +18,38 @@ fnum = 0.5*f/wbeam; % asymptotic cone angle of beam -- < 3 is a pretty wide focu
 
 %% set up grids for observation + mirror planes
 N = 65;
-[x,y,z,zo,yo,zo] = camera(N,zoffset,-oap,oaphi);
+[x,y,z,xo,yo,zo] = camera(N,zoffset,-oap,oaphi);
 %[xi,yi,Env] = mirror(N,oap,oaphi);
 %[pex,pey,pez] = pvec(xi,yi);
 %pex = pex.*Env;
 %pey = pey.*Env;
 %pez = pez.*Env;
+%FieldCrossRender(x,y,z,pex,pey,pez,0,3.9,"Mirror polarization vector")
 
 %% get a frame of reference
-[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
-[Ex,Ey,Ez] = rot(Exo,Eyo,Ezo,oap,oaphi);
-FieldCrossRender(x,y,z,Ex,Ey,Ez,0,3.9,"$Ignatovsky (\\theta=30^\\circ,\\phi=90^\\circ)$")
+%[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
+%[Ex,Ey,Ez] = rot(Exo,Eyo,Ezo,oap,oaphi);%Singh(xo,yo,zo);
+%FieldCrossRender(x,y,z,Exo,Eyo,Ezo,figX=0,figY=3.9,paramText="Ignatovsky $(z=0)$")
+%FieldCrossRender(x,y,Ex,Ey,Ez,figX=0,figY=3.9,paramText="Ignatovsky $(\\theta=30^\\circ)$")
 
 %% for each point on observation plane, integrate fields on source plane
-%oaphirange = 0:15:360;
-%Ex = zeros([size(x) length(oaphirange)]);
-%Ey = Ex;
-%Ez = Ex;
-%for n=1:length(oaphirange)
-	%oaphi=deg2rad(oaphirange(n));
-	%[xo, yo, zo]  = rot(x,y,z,-oap,oaphi);
-	%[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
-	%[Ex(:,:,n),Ey(:,:,n),Ez(:,:,n)] = rot(Exo,Eyo,Ezo,oap,oaphi);
-	%Ex(:,:,n) = Ex(:,:,n) - Ex0;
-	%Ey(:,:,n) = Ey(:,:,n) - Ey0;
-	%Ez(:,:,n) = Ez(:,:,n) - Ez0;
-	%n
-%end
-%FieldCrossMovie(x,y,z,Ex,Ey,Ez,oaphirange,"orbit_theta30");
+oaprange = [0:7 8:2:22 24:3:45 50:5:90];
+Ex = zeros([size(x) length(oaprange)]);
+Ey = Ex;
+Ez = Ex;
+Exp = Ex;
+Eyp = Ex;
+Ezp = Ex;
+for n=1:length(oaprange)
+	oap=deg2rad(oaprange(n));
+	[xo, yo, zo]  = rot(x,y,z,-oap,oaphi);
+	xo = xo *sec(oap/2)^2; % TODO: get this scaling in the render ticks
+	yo = yo *sec(oap/2)^2;
+	zo = zo *sec(oap/2)^2;
+	[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
+	[Ex(:,:,n),Ey(:,:,n),Ez(:,:,n)] = rot(Exo,Eyo,Ezo,oap,oaphi);
+	n
+end
+params = {'legend',false,'paramText','Ignatovsky ($\\theta=%d^\\circ$)'};
+FieldCrossMovie(x,y,z,Ex,Ey,Ez,oaprange, ...
+	live=true, renderParams=params);%, movieName="sweep_to_90_fscaled");
