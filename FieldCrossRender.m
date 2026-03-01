@@ -15,7 +15,7 @@ properties (SetAccess = private)
 end
 
 methods
-function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
+function F = FieldCrossRender(x, y, Ex, Ey, Ez, Exp, Eyp, Ezp, options)
 	arguments
 		x double % observation coordinates (grids)
 		y double
@@ -23,6 +23,9 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 		Ex double % field components
 		Ey double
 		Ez double
+		Exp double % field components
+		Eyp double
+		Ezp double
 		% name-value arguments
 		options.figX double = 6.9 %0.0,6.9,13.8
 		options.figY double = 4.0
@@ -44,10 +47,10 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 	F.fig.InvertHardcopy = 'off';
 	F.fig.Color = 'white';
 
-	F = F.Render(x, y, Ex, Ey, Ez, 0);
+	F = F.Render(x, y, Ex, Ey, Ez, Exp, Eyp, Ezp, 0);
 end
 
-function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
+function F = Render(F, x, y, Ex, Ey, Ez, Exp, Eyp, Ezp, paramVal)
 	clf(F.fig);
 	%% boundary information about observation plane from given meshgrids
 	% value ranges
@@ -79,13 +82,10 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 	title(['$E_x (\rho,\phi)/ (' num2str(round(Ex0*10^xdigits)/10^xdigits) ' E_0)$'], ...
 		'Interpreter','latex')
 	hold on
-
 	% included with the upper left plot is the label reporting our slicing parameter
 	% (z-plane, slicing angle, etc)
 	text(xmin,xmax*1.6,sprintf(F.paramText,paramVal), ...
 		'Interpreter','latex','FontSize',14);
-	% cross-section line
-	plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
 	hold off
 
 	% upper middle axes: y-component
@@ -100,10 +100,6 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 	ydigits = ceil(-log10(Ey0));
 	title(['$E_y (\rho,\phi)/ (' num2str(round(Ey0*10^ydigits)/10^ydigits) ' E_0)$'], ...
 		'Interpreter','latex')
-	hold on
-	% cross-section line (diagonal on this one)
-	plot3([-sqrt(xmin^2/2),sqrt(xmax^2/2)],[-sqrt(xmin^2/2),sqrt(xmax^2/2)],[2,2],'w--','LineWidth',1);
-	hold off
 
 	% upper right axes: z-component
 	F.az2=axes('position',[.71 0.49 .25 .33]);
@@ -117,62 +113,50 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 	zdigits = ceil(-log10(Ez0));
 	title(['$E_z (\rho,\phi)/ (' num2str(round(Ez0*10^zdigits)/10^zdigits) ' E_0)$'], ...
 		'Interpreter','latex')
-	hold on
-	% cross-section line
-	plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
-	hold off
 
 	% lower left axes: x-cross section
 	F.ax1=axes('position',[.05 0.09 .25 .33]);
-	plot(xrange,abs(Exf)/Ex0,'Color',[49,54,143]/255,'LineWidth',1.5);
-	set(F.ax1,'YDir','normal');
-	% label axes
-	xlabel('$\rho / \lambda$','Interpreter','latex');
-	F.ax1.XTick = [xmin 0 xmax] * 0.8;
-	F.ax1.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
-	F.ax1.YTick = [0 1];
-	xlim([xmin xmax]);
-	ylim([0 1.05]);
+	Ex0complex = max(Exp,[],"all");
+	phsglobal = conj(Ex0complex)/abs(Ex0complex);
+	% render complex phase
+	Ex0=abs(Ex0complex);
+	image([xmin xmax],[ymin ymax],PhaseColor(Exp/Ex0*phsglobal,5));
+	set(F.ax2,'YDir','normal'); % image() reverses y-axis coordinates
 	axis square;
-	% formatted title
-	title(['$\left| E_x(\rho,\phi=0) \right| / (' num2str(round(Ex0*10^xdigits)/10^xdigits) ' E_0)$'], ...
+	axis off;
+	% title w/ formatting
+	xdigits = ceil(-log10(Ex0));
+	title(['$E_x (\rho,\phi)/ (' num2str(round(Ex0*10^xdigits)/10^xdigits) ' E_0)$'], ...
 		'Interpreter','latex')
-	% include a legend box in the upper-right corner of the figure
-	if F.drawLegend==1
-		la=legend('Ignatovsky','Location','southwest');
-		set(la, 'Position',[0.75 0.9 .1 .05],'FontSize',8); % repositioned!
-	end
+	hold on
+	text(xmin,-ymin*1.3,"Bottom = Ignatovsky", ...
+		'Interpreter','latex','FontSize',14);
+	hold off
 
 	% lower middle axes: y-cross section
 	F.ay1=axes('position',[.38 0.09 .25 .33]);
-	plot(xrange,abs(Eyf)/Ey0,'Color',[49,54,143]/255,'LineWidth',1.5);
-	set(F.ay1,'YDir','normal');
-	% label axes
-	xlabel('$\rho / \lambda$','Interpreter','latex');
-	F.ay1.XTick = [xmin 0 xmax] * 0.8;
-	F.ay1.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
-	F.ay1.YTick = [0 1];
-	xlim([xmin xmax]);
-	ylim([0 1.05]);
+	% render complex phase
+	Ey0 = max(abs(Eyp),[],"all");
+	image([xmin xmax],[ymin ymax],PhaseColor(Eyp/Ey0*phsglobal,5));
+	set(F.ay2,'YDir','normal');
 	axis square;
+	axis off;
 	% formatted title
-	title(['$\left| E_y(\rho,\phi=\pi/4) \right| / (' num2str(round(Ey0*10^ydigits)/10^ydigits) ' E_0)$'], ...
+	ydigits = ceil(-log10(Ey0));
+	title(['$E_y (\rho,\phi)/ (' num2str(round(Ey0*10^ydigits)/10^ydigits) ' E_0)$'], ...
 		'Interpreter','latex')
 
 	% lower right axes: z-cross section
 	F.az1=axes('position',[.71 0.09 .25 .33]);
-	plot(xrange,abs(Ezf)/Ez0,'Color',[49,54,143]/255,'LineWidth',1.5);
-	set(F.az1,'YDir','normal');
-	% label axes
-	xlabel('$\rho / \lambda$','Interpreter','latex');
-	F.az1.XTick = [xmin 0 xmax] * 0.8;
-	F.az1.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
-	F.az1.YTick = [0 1];
-	xlim([xmin xmax]);
-	ylim([0 1.05]);
+	% render complex phase
+	Ez0 = max(abs(Ezp),[],"all");
+	image([xmin xmax],[ymin ymax],PhaseColor(Ezp/Ez0*phsglobal,5));
+	set(F.az2,'YDir','normal');
 	axis square;
+	axis off;
 	% formatted title
-	title(['$\left| E_z(\rho,\phi=0) \right| / (' num2str(round(Ez0*10^zdigits)/10^zdigits) ' E_0)$'], ...
+	zdigits = ceil(-log10(Ez0));
+	title(['$E_z (\rho,\phi)/ (' num2str(round(Ez0*10^zdigits)/10^zdigits) ' E_0)$'], ...
 		'Interpreter','latex')
 
 	% top colorbar

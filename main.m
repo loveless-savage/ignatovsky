@@ -4,7 +4,7 @@ k = 2*pi/lambda; % wave number
 wbeam = 100; % width of incident beam
 f = 300; % focal length of parabolic mirror: should be further than z0
 
-oap = deg2rad(30); % OAP angle
+oap = deg2rad(60); % OAP angle
 oaphi = 0;%deg2rad(45); % azimuthal angle of OAP cut relative to polarization
 
 zoffset = 0;%-f; % displacement from focal plane
@@ -33,27 +33,24 @@ N = 65;
 %FieldCrossRender(x,y,Ex,Ey,Ez,figX=0,figY=3.9,paramText="Ignatovsky $(\\theta=30^\\circ)$")
 
 %% for each point on observation plane, integrate fields on source plane
-oaprange = [0:7 8:2:22 24:3:45 50:5:90];
-Ex = zeros([size(x) length(oaprange)]);
+oaphirange = 0:15:345;
+Ex = zeros([size(x) length(oaphirange)]);
 Ey = Ex;
 Ez = Ex;
 Exp = Ex;
 Eyp = Ex;
 Ezp = Ex;
-for n=1:length(oaprange)
-	oap=deg2rad(oaprange(n));
+for n=1:length(oaphirange)
+	oaphi=deg2rad(oaphirange(n));
 	[xo, yo, zo]  = rot(x,y,z,-oap,oaphi);
 	xo = xo *sec(oap/2)^2; % TODO: get this scaling in the render ticks
 	yo = yo *sec(oap/2)^2;
 	zo = zo *sec(oap/2)^2;
 	[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
 	[Ex(:,:,n),Ey(:,:,n),Ez(:,:,n)] = rot(Exo,Eyo,Ezo,oap,oaphi);
-	[Exp(:,:,n),Eyp(:,:,n),Ezp(:,:,n)] = Soap(x,y,z,oap,oaphi);
+	[Exp(:,:,n),Eyp(:,:,n),Ezp(:,:,n)] = Soap(x,y,z,oap,-oaphi);
 	n
 end
-params = {'legend',false,'paramText','Ignatovsky ($\\theta=%d^\\circ$)'};
-FieldCrossMovie(x,y,z,Ex,Ey,Ez,oaprange, ...
-	live=true, renderParams=params);%, movieName="sweep_to_90_fscaled");
-params = {'legend',false,'paramText','SOAP ($\\theta=%d^\\circ$)'};
-FieldCrossMovie(x,y,z,Exp,Eyp,Ezp,oaprange, ...
-	live=true, renderParams=params);%, movieName="soap_to_90");
+params = {'legend',false,'paramText','Top = SOAP\\ ($\\theta=60^\\circ,\\phi=%d^\\circ$)'};
+FieldCrossMovie(x,y,z,Exp,Eyp,Ezp,Ex,Ey,Ez,oaphirange, ...
+	renderParams=params, movieName="orbit_theta60_combo");
