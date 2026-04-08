@@ -14,6 +14,14 @@ properties (SetAccess = private)
 	ax1 % lower plots
 	ay1
 	az1
+	% components of figHeight are:
+	% 1. total figure height in Inches
+	% 2. normalized vertical alignment of main image row
+	% 3. normalized vertical alignment of lower image row
+	% 4. normalized image height
+	% 5. normalized vertical alignment of header colorbar
+	% 6. normalized colorbar height
+	figHeight = [7.2 0.49 0.09 0.33 0.89 0.05];
 end
 
 methods
@@ -29,28 +37,47 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 		options.figX double = 6.9 %0.0,6.9,13.8
 		options.figY double = 4.0
 		options.figWidth  double = 10 %15 %6.7
-		options.figHeight double = 3.9 %6.9 %10.35 %4.6
+		options.figHeight double = 6.9 %10.35 %4.6
 		options.paramText string = ''
 		options.drawLineout logical = true
 		options.drawHeader logical = true
 		options.drawLegend logical = false
 	end
 
+	F.figHeight(1) = options.figHeight+0.3;
+
 	if isfield(options,'paramText')
 		F.paramText = options.paramText;
 	end
-	if isfield(options,'drawLineout')
+	if isfield(options,'drawLineout') && options.drawLineout==0
 		F.drawLineout = options.drawLineout;
+		% adjust figure height
+		F.figHeight(1) = F.figHeight(1) - 3.2/6.9*options.figHeight;
+		% these numbers apply to no lineout, but header still on
+		F.figHeight(2) = 0.078;
+		F.figHeight(4) = 0.6;
+		F.figHeight(5) = 0.8;
+		F.figHeight(6) = 0.09;
 	end
-	if isfield(options,'drawHeader')
+	if isfield(options,'drawHeader') && options.drawHeader==0
 		F.drawHeader = options.drawHeader;
+		% adjust figure height
+		F.figHeight(1) = F.figHeight(1) - 0.8/6.9*options.figHeight;
+		if F.drawLineout==0 % both lineout and header turned off
+			F.figHeight(2) = 0.1;
+			F.figHeight(4) = 0.74;
+		else % lineout but no header
+			F.figHeight(2) = 0.55;
+			F.figHeight(3) = 0.1;
+			F.figHeight(4) = 0.37;
+		end
 	end
 	if F.drawLineout==1 && F.drawHeader==1 && isfield(options,'drawLegend')
 		F.drawLegend = options.drawLegend;
 	end
 
 	F.fig = figure('Units','Inches','Position', ...
-			[options.figX options.figY options.figWidth options.figHeight+3.0*F.drawLineout+0.3]);
+			[options.figX options.figY options.figWidth F.figHeight(1)]);
 	F.fig.InvertHardcopy = 'off';
 	F.fig.Color = 'white';
 
@@ -72,7 +99,7 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 	phsglobal = conj(Ex0complex)/abs(Ex0complex);
 
 	% upper left axes: x-component
-	F.ax2=axes('position',[.05 0.09+0.4*F.drawLineout .25 .33]);
+	F.ax2=axes('position',[.05 F.figHeight(2) .25 F.figHeight(4)]);
 	% render complex phase
 	Ex0=abs(Ex0complex);
 	image([xmin xmax],[ymin ymax],PhaseColor(Ex/Ex0*phsglobal,5));
@@ -98,7 +125,7 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 	hold off
 
 	% upper middle axes: y-component
-	F.ay2=axes('position',[.38 0.09+0.4*F.drawLineout .25 .33]);
+	F.ay2=axes('position',[.38 F.figHeight(2) .25 F.figHeight(4)]);
 	% render complex phase
 	Ey0 = max(abs(Ey),[],"all");
 	image([xmin xmax],[ymin ymax],PhaseColor(Ey/Ey0*phsglobal,5));
@@ -118,7 +145,7 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 	end
 
 	% upper right axes: z-component
-	F.az2=axes('position',[.71 0.09+0.4*F.drawLineout .25 .33]);
+	F.az2=axes('position',[.71 F.figHeight(2) .25 F.figHeight(4)]);
 	% render complex phase
 	Ez0 = max(abs(Ez),[],"all");
 	image([xmin xmax],[ymin ymax],PhaseColor(Ez/Ez0*phsglobal,5));
@@ -142,7 +169,7 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 
 	% top colorbar
 	if F.drawHeader==1
-		acb=axes('position',[.38 .49+0.4*F.drawLineout .25 .05]);
+		acb=axes('position',[.38 F.figHeight(5) .25 F.figHeight(6)]);
 		% render spectrum of phase colors
 		phase = 0:pi/50:2*pi;
 		amplitude = 0:0.02:1;
@@ -171,7 +198,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange,Ex0,Ey0,Ez0)
 	Ezf = interp2(x,y,Ez,xrange,0*yrange);
 
 	% lower left axes: x-cross section
-	F.ax1=axes('position',[.05 0.09 .25 .33]);
+	F.ax1=axes('position',[.05 F.figHeight(3) .25 F.figHeight(4)]);
 	plot(xrange,abs(Exf)/Ex0,'Color',[49,54,143]/255,'LineWidth',1.5);
 	set(F.ax1,'YDir','normal');
 	% label axes
@@ -194,7 +221,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange,Ex0,Ey0,Ez0)
 	end
 
 	% lower middle axes: y-cross section
-	F.ay1=axes('position',[.38 0.09 .25 .33]);
+	F.ay1=axes('position',[.38 F.figHeight(3) .25 F.figHeight(4)]);
 	plot(xrange,abs(Eyf)/Ey0,'Color',[49,54,143]/255,'LineWidth',1.5);
 	set(F.ay1,'YDir','normal');
 	% label axes
@@ -212,7 +239,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange,Ex0,Ey0,Ez0)
 		' E_0)$'], 'Interpreter','latex')
 
 	% lower right axes: z-cross section
-	F.az1=axes('position',[.71 0.09 .25 .33]);
+	F.az1=axes('position',[.71 F.figHeight(3) .25 F.figHeight(4)]);
 	plot(xrange,abs(Ezf)/Ez0,'Color',[49,54,143]/255,'LineWidth',1.5);
 	set(F.az1,'YDir','normal');
 	% label axes
