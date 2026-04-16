@@ -54,7 +54,7 @@ function slide(src,event,paramVals,F,x,y,z,Exr,Eyr,Ezr)
 	end
 	fprintf("n=%d\n",n);
 	F.Render(x, y, Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n),paramVals(n));
-	F.fig.Name = "theta=30,phi="+string(paramVals(n))+" ["+string(n)+"]"; % TODO
+	F.fig.Name = "theta="+string(paramVals(n))+" ["+string(n)+"]"; % TODO
 	src.UserData = n;
 end
 end

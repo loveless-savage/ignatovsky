@@ -117,6 +117,9 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 	if F.drawHeader==1
 		text(xmin,xmax*1.6,sprintf(F.paramText,paramVal), ...
 			'Interpreter','latex','FontSize',14);
+	else
+		annotation('textbox',[0.048 0.37 0.1 0.1],'String',sprintf(F.paramText,paramVal),...
+			'Interpreter','latex','FontSize',16,'EdgeColor','none','Rotation',90);
 	end
 	% cross-section line
 	if F.drawLineout==1
