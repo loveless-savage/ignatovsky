@@ -1,4 +1,4 @@
-%% mode 00 of the paraxial wave equation, as derived by Erikson & Singh
+%% modified Singh model for an Off-Axis Parabola (SOAP)
 function [Ex,Ey,Ez]=Soap(x,y,z,oap,oaphi)
 global k z0 w0;
 
