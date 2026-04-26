@@ -4,6 +4,7 @@ properties
 	fig % figure itself
 	paramText = "$z = %3.2f \\lambda$"; % left corner text
 	drawLineout = true; % deactivates dashed line on upper plots + 2D lower row
+	altE = {};
 	drawHeader = true;
 	drawLegend = false;
 end
@@ -14,6 +15,7 @@ properties (SetAccess = private)
 	ax1 % lower plots
 	ay1
 	az1
+	figWidth = 10
 	% components of figHeight are:
 	% 1. total figure height in Inches
 	% 2. normalized vertical alignment of main image row
@@ -40,10 +42,14 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 		options.figHeight double = 6.9 %10.35 %4.6
 		options.paramText string = ''
 		options.drawLineout logical = true
+		options.altE cell = {}
 		options.drawHeader logical = true
 		options.drawLegend logical = false
 	end
 
+	if isfield(options,'figWidth')
+		F.figWidth = options.figWidth;
+	end
 	F.figHeight(1) = options.figHeight+0.3;
 
 	if isfield(options,'paramText')
@@ -58,6 +64,9 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 		F.figHeight(4) = 0.6;
 		F.figHeight(5) = 0.8;
 		F.figHeight(6) = 0.09;
+	end
+	if isfield(options,'altE')
+		F.altE = options.altE;
 	end
 	if isfield(options,'drawHeader') && options.drawHeader==0
 		F.drawHeader = options.drawHeader;
@@ -85,6 +94,8 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 end
 
 function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
+	% scale label text with figure size: it happens that figWidth (Inches) = FontSize (pts) looks nice
+	set(0,'DefaultAxesFontSize',F.figWidth);
 	clf(F.fig);
 	%% boundary information about observation plane from given meshgrids
 	% value ranges
@@ -96,30 +107,30 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 
 	% apply global phase offset based on max value of Ex
 	Ex0complex = max(Ex,[],"all");
+	Ex0 = abs(Ex0complex);
 	phsglobal = conj(Ex0complex)/abs(Ex0complex);
 
 	% upper left axes: x-component
 	F.ax2=axes('position',[.05 F.figHeight(2) .25 F.figHeight(4)]);
 	% render complex phase
-	Ex0=abs(Ex0complex);
 	image([xmin xmax],[ymin ymax],PhaseColor(Ex/Ex0*phsglobal,5));
 	set(F.ax2,'YDir','normal'); % image() reverses y-axis coordinates
 	axis square;
 	axis off;
 	% title w/ formatting
 	xdigits = ceil(-log10(Ex0));
-	title(['$E_x (\rho,\phi)/ (' num2str(round(Ex0*10^xdigits)/10^xdigits) ' E_0)$'], ...
-		'Interpreter','latex')
+	title('$E_x / E_0$','Interpreter','latex')
 	hold on
 
 	% included with the upper left plot is the label reporting our slicing parameter
 	% (z-plane, slicing angle, etc)
 	if F.drawHeader==1
 		text(xmin,xmax*1.6,sprintf(F.paramText,paramVal), ...
-			'Interpreter','latex','FontSize',14);
+			'Interpreter','latex','FontSize',1.5*F.figWidth);
 	else
 		annotation('textbox',[0.048 0.37 0.1 0.1],'String',sprintf(F.paramText,paramVal),...
-			'Interpreter','latex','FontSize',16,'EdgeColor','none','Rotation',90);
+			'Interpreter','latex','FontSize',1.5*F.figWidth,...
+			'EdgeColor','none','Rotation',90);
 	end
 	% cross-section line
 	if F.drawLineout==1
@@ -136,8 +147,8 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 	axis square;
 	axis off;
 	% formatted title
-	ydigits = ceil(-log10(Ey0));
-	title(['$E_y (\rho,\phi)/ (' num2str(round(Ey0*10^ydigits)/10^ydigits) ' E_0)$'], ...
+	ydigits = ceil(-log10(Ey0/Ex0));
+	title(['$E_y / (' num2str(round(Ey0/Ex0*10^ydigits)/10^ydigits) ' E_0)$'], ...
 		'Interpreter','latex')
 	% cross-section line (diagonal on this one)
 	if F.drawLineout==1
@@ -156,8 +167,8 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 	axis square;
 	axis off;
 	% formatted title
-	zdigits = ceil(-log10(Ez0));
-	title(['$E_z (\rho,\phi)/ (' num2str(round(Ez0*10^zdigits)/10^zdigits) ' E_0)$'], ...
+	zdigits = ceil(-log10(Ez0/Ex0));
+	title(['$E_z / (' num2str(round(Ez0/Ex0*10^zdigits)/10^zdigits) ' E_0)$'], ...
 		'Interpreter','latex')
 	% cross-section line
 	if F.drawLineout==1
@@ -167,7 +178,7 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 	end
 
 	if F.drawLineout==1
-		F = F.lineout(x,y,Ex,Ey,Ez,xrange,yrange,Ex0,Ey0,Ez0);
+		F = F.lineout(x,y,Ex,Ey,Ez,xrange,yrange);
 	end
 
 	% top colorbar
@@ -178,7 +189,7 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 		amplitude = 0:0.02:1;
 		[P,A] = meshgrid(phase,amplitude);
 		image([0 2*pi],[0 1],PhaseColor(A.*exp(1i*P),5));
-		set(acb,'YDir','normal','XAxisLocation','top','FontSize',8)
+		set(acb,'YDir','normal','XAxisLocation','top');
 		% label axes
 		xlabel('phase');
 		ylabel('amp.');
@@ -192,17 +203,39 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 	end
 end
 
-function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange,Ex0,Ey0,Ez0)
+function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange)
 	% interpolate string of points from each matrix to get cross sections
 	xmin = min(xrange); xmax = max(xrange);
 	ymin = min(yrange); ymax = max(yrange);
 	Exf = interp2(x,y,Ex,xrange,0*yrange); % FIXME: xo,yo
 	Eyf = interp2(x,y,Ey,sqrt(0.5)*xrange,sqrt(0.5)*yrange);
 	Ezf = interp2(x,y,Ez,xrange,0*yrange);
+	% normalization factors
+	Ex0 = max(abs(Ex),[],"all");
+	Ey0 = max(abs(Ey),[],"all");
+	Ez0 = max(abs(Ez),[],"all");
+
+	% second lineout for comparison?
+	if length(F.altE)>0
+		Exp = cell2mat(F.altE(1));
+		Eyp = cell2mat(F.altE(2));
+		Ezp = cell2mat(F.altE(3));
+		Expf = interp2(x,y,Exp,xrange,0*yrange);
+		Eypf = interp2(x,y,Eyp,sqrt(0.5)*xrange,sqrt(0.5)*yrange);
+		Ezpf = interp2(x,y,Ezp,xrange,0*yrange);
+		Exp0 = max(abs(Exp),[],"all");
+		Eyp0 = max(abs(Eyp),[],"all");
+		Ezp0 = max(abs(Ezp),[],"all");
+	end
 
 	% lower left axes: x-cross section
 	F.ax1=axes('position',[.05 F.figHeight(3) .25 F.figHeight(4)]);
 	plot(xrange,abs(Exf)/Ex0,'Color',[49,54,143]/255,'LineWidth',1.5);
+	if length(F.altE)>0
+		hold on
+		plot(xrange,abs(Expf)/Exp0,'Color',[200,0,0]/255,'LineWidth',1.5);
+		hold off
+	end
 	set(F.ax1,'YDir','normal');
 	% label axes
 	xlabel('$\rho / \lambda$','Interpreter','latex');
@@ -213,19 +246,26 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange,Ex0,Ey0,Ez0)
 	ylim([0 1.05]);
 	axis square;
 	% formatted title
-	xdigits = ceil(-log10(Ex0));
-	title(['$\left| E_x(\rho,\phi=0) \right| / (' ...
-		num2str(round(Ex0*10^xdigits)/10^xdigits) ...
-		' E_0)$'], 'Interpreter','latex')
+	%xdigits = ceil(-log10(Ex0));
+	title('$\left| E_x \right| / E_0$', 'Interpreter','latex');
 	% include a legend box in the upper-right corner of the figure
 	if F.drawLegend==1
-		la=legend('Ignatovsky','Location','southwest');
-		set(la, 'Position',[0.75 0.9 .1 .05],'FontSize',8); % repositioned!
+		legendList={'MSM'};
+		if length(F.altE)>0
+			legendList(2)='Ignatovsky';
+		end
+		la=legend(legendList,'Location','southwest');
+		set(la, 'Position',[0.75 0.9 .1 .05]);
 	end
 
 	% lower middle axes: y-cross section
 	F.ay1=axes('position',[.38 F.figHeight(3) .25 F.figHeight(4)]);
 	plot(xrange,abs(Eyf)/Ey0,'Color',[49,54,143]/255,'LineWidth',1.5);
+	if length(F.altE)>0
+		hold on
+		plot(xrange,abs(Eypf)/Eyp0,'Color',[200,0,0]/255,'LineWidth',1.5);
+		hold off
+	end
 	set(F.ay1,'YDir','normal');
 	% label axes
 	xlabel('$\rho / \lambda$','Interpreter','latex');
@@ -236,14 +276,19 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange,Ex0,Ey0,Ez0)
 	ylim([0 1.05]);
 	axis square;
 	% formatted title
-	ydigits = ceil(-log10(Ey0));
-	title(['$\left| E_y(\rho,\phi=\pi/4) \right| / (' ...
+	ydigits = ceil(-log10(Ey0/Ex0));
+	title(['$\left| E_y \right| / (' ...
 		num2str(round(Ey0*10^ydigits)/10^ydigits) ...
 		' E_0)$'], 'Interpreter','latex')
 
 	% lower right axes: z-cross section
 	F.az1=axes('position',[.71 F.figHeight(3) .25 F.figHeight(4)]);
 	plot(xrange,abs(Ezf)/Ez0,'Color',[49,54,143]/255,'LineWidth',1.5);
+	if length(F.altE)>0
+		hold on
+		plot(xrange,abs(Ezpf)/Ezp0,'Color',[200,0,0]/255,'LineWidth',1.5);
+		hold off
+	end
 	set(F.az1,'YDir','normal');
 	% label axes
 	xlabel('$\rho / \lambda$','Interpreter','latex');
@@ -254,8 +299,8 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange,Ex0,Ey0,Ez0)
 	ylim([0 1.05]);
 	axis square;
 	% formatted title
-	zdigits = ceil(-log10(Ez0));
-	title(['$\left| E_z(\rho,\phi=0) \right| / (' ...
+	zdigits = ceil(-log10(Ez0/Ex0));
+	title(['$\left| E_z \right| / (' ...
 		num2str(round(Ez0*10^zdigits)/10^zdigits) ...
 		' E_0)$'], 'Interpreter','latex')
 end
