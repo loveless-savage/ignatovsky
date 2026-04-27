@@ -4,7 +4,8 @@ properties
 	fig % figure itself
 	paramText = "$z = %3.2f \\lambda$"; % left corner text
 	drawLineout = true; % deactivates dashed line on upper plots + 2D lower row
-	altE = {};
+	altE = {}; % for comparing more than 1 field
+	isB = false; % change label formatting when rendering E and B
 	drawHeader = true;
 	drawLegend = false;
 end
@@ -43,6 +44,7 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 		options.paramText string = ''
 		options.drawLineout logical = true
 		options.altE cell = {}
+		options.isB logical = false
 		options.drawHeader logical = true
 		options.drawLegend logical = false
 	end
@@ -55,31 +57,36 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 	if isfield(options,'paramText')
 		F.paramText = options.paramText;
 	end
-	if isfield(options,'drawLineout') && options.drawLineout==0
-		F.drawLineout = options.drawLineout;
-		% adjust figure height
-		F.figHeight(1) = F.figHeight(1) - 3.2/6.9*options.figHeight;
-		% these numbers apply to no lineout, but header still on
-		F.figHeight(2) = 0.078;
-		F.figHeight(4) = 0.6;
-		F.figHeight(5) = 0.8;
-		F.figHeight(6) = 0.09;
-	end
 	if isfield(options,'altE')
 		F.altE = options.altE;
+	end
+	if isfield(options,'isB')
+		F.isB = options.isB;
 	end
 	if isfield(options,'drawHeader') && options.drawHeader==0
 		F.drawHeader = options.drawHeader;
 		% adjust figure height
 		F.figHeight(1) = F.figHeight(1) - 0.8/6.9*options.figHeight;
-		if F.drawLineout==0 % both lineout and header turned off
+		% these numbers apply to no header, but lineout still on
+		F.figHeight(2) = 0.55;
+		F.figHeight(3) = 0.1;
+		F.figHeight(4) = 0.37;
+	end
+	if isfield(options,'drawLineout') && options.drawLineout==0 && length(F.altE)==0
+		F.drawLineout = options.drawLineout;
+		% adjust figure height
+		F.figHeight(1) = F.figHeight(1) - 3.2/6.9*options.figHeight;
+		if F.drawHeader==0 % both lineout and header turned off
 			F.figHeight(2) = 0.1;
 			F.figHeight(4) = 0.74;
-		else % lineout but no header
-			F.figHeight(2) = 0.55;
-			F.figHeight(3) = 0.1;
-			F.figHeight(4) = 0.37;
+		else % header but no lineout
+			F.figHeight(2) = 0.078;
+			F.figHeight(4) = 0.6;
+			F.figHeight(5) = 0.8;
+			F.figHeight(6) = 0.09;
 		end
+	elseif isfield(options,'drawLineout') && options.drawLineout==0
+		F.drawLineout = options.drawLineout;
 	end
 	if F.drawLineout==1 && F.drawHeader==1 && isfield(options,'drawLegend')
 		F.drawLegend = options.drawLegend;
@@ -179,6 +186,10 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 
 	if F.drawLineout==1
 		F = F.lineout(x,y,Ex,Ey,Ez,xrange,yrange);
+	elseif length(F.altE)>0
+		F = F.lowerPlots(x,y,...
+			cell2mat(F.altE(1)),cell2mat(F.altE(2)),cell2mat(F.altE(3)),...
+			xrange,yrange);
 	end
 
 	% top colorbar
@@ -238,7 +249,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange)
 	end
 	set(F.ax1,'YDir','normal');
 	% label axes
-	xlabel('$\rho / \lambda$','Interpreter','latex');
+	xlabel('$r / \lambda$','Interpreter','latex');
 	F.ax1.XTick = [xmin 0 xmax] * 0.8;
 	F.ax1.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
 	F.ax1.YTick = [0 1];
@@ -252,7 +263,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange)
 	if F.drawLegend==1
 		legendList={'MSM'};
 		if length(F.altE)>0
-			legendList(2)='Ignatovsky';
+			legendList(2)={'Ignatovsky'};
 		end
 		la=legend(legendList,'Location','southwest');
 		set(la, 'Position',[0.75 0.9 .1 .05]);
@@ -268,7 +279,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange)
 	end
 	set(F.ay1,'YDir','normal');
 	% label axes
-	xlabel('$\rho / \lambda$','Interpreter','latex');
+	xlabel('$r / \lambda$','Interpreter','latex');
 	F.ay1.XTick = [xmin 0 xmax] * 0.8;
 	F.ay1.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
 	F.ay1.YTick = [0 1];
@@ -291,7 +302,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange)
 	end
 	set(F.az1,'YDir','normal');
 	% label axes
-	xlabel('$\rho / \lambda$','Interpreter','latex');
+	xlabel('$r / \lambda$','Interpreter','latex');
 	F.az1.XTick = [xmin 0 xmax] * 0.8;
 	F.az1.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
 	F.az1.YTick = [0 1];
@@ -304,5 +315,99 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange)
 		num2str(round(Ez0*10^zdigits)/10^zdigits) ...
 		' E_0)$'], 'Interpreter','latex')
 end
+
+function F = lowerPlots(F, x, y, Exp, Eyp, Ezp, xrange, yrange)
+	% min/max values
+	xmin = min(xrange); xmax = max(xrange);
+	ymin = min(yrange); ymax = max(yrange);
+	% if plotting the B field, we want to normalize relative to B_y
+	if F.isB
+		E0complex = max(Eyp,[],"all");
+		phsglobal = conj(E0complex)/abs(E0complex);
+		Ex0 = max(abs(Exp),[],"all");
+		Ey0 = abs(E0complex);
+		Ez0 = max(abs(Ezp),[],"all");
+		xdigits = ceil(-log10(Ex0/Ey0));
+		zdigits = ceil(-log10(Ez0/Ey0));
+	else
+		E0complex = max(Exp,[],"all");
+		phsglobal = conj(E0complex)/abs(E0complex);
+		Ex0 = abs(E0complex);
+		Ey0 = max(abs(Eyp),[],"all");
+		Ez0 = max(abs(Ezp),[],"all");
+		ydigits = ceil(-log10(Ey0/Ex0));
+		zdigits = ceil(-log10(Ez0/Ex0));
+	end
+	% lower left axes: x-cross section
+	F.ax1=axes('position',[.05 F.figHeight(3) .25 F.figHeight(4)]);
+	% render complex phase
+	image([xmin xmax],[ymin ymax],PhaseColor(Exp/Ex0*phsglobal,5));
+	set(F.ax2,'YDir','normal'); % image() reverses y-axis coordinates
+	% label axes
+	xlabel('$r / f$','Interpreter','latex');
+	F.ax1.XTick = [xmin 0 xmax] * 0.8;
+	F.ax1.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
+	F.ax1.YTick = [ymin 0 ymax] * 0.8;
+	F.ax1.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
+	axis square;
+	axis off;
+	% title w/ formatting
+	if F.isB
+		title(['$c B_x / (' num2str(round(Ex0*10^xdigits)/10^xdigits) ' B_0)$'], ...
+			'Interpreter','latex')
+	else
+		title(['$E_x / E_0$'], ...
+			'Interpreter','latex')
+		hold on
+		text(xmin,-ymin*1.3,"Bottom = Ignatovsky", ...
+			'Interpreter','latex','FontSize',14);
+		hold off
+	end
+
+	% lower middle axes: y-cross section
+	F.ay1=axes('position',[.38 F.figHeight(3) .25 F.figHeight(4)]);
+	% render complex phase
+	image([xmin xmax],[ymin ymax],PhaseColor(Eyp/Ey0*phsglobal,5));
+	set(F.ay2,'YDir','normal');
+	% label axes
+	xlabel('$r / f$','Interpreter','latex');
+	F.ax1.XTick = [xmin 0 xmax] * 0.8;
+	F.ax1.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
+	F.ax1.YTick = [ymin 0 ymax] * 0.8;
+	F.ax1.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
+	axis square;
+	axis off;
+	% formatted title
+	if F.isB
+		title(['$c B_y / B_0$'], ...
+			'Interpreter','latex')
+	else
+		title(['$E_y / (' num2str(round(Ey0*10^ydigits)/10^ydigits) ' E_0)$'], ...
+			'Interpreter','latex')
+	end
+
+	% lower right axes: z-cross section
+	F.az1=axes('position',[.71 F.figHeight(3) .25 F.figHeight(4)]);
+	% render complex phase
+	image([xmin xmax],[ymin ymax],PhaseColor(Ezp/Ez0*phsglobal,5));
+	set(F.az2,'YDir','normal');
+	% label axes
+	xlabel('$r / f$','Interpreter','latex');
+	F.ax1.XTick = [xmin 0 xmax] * 0.8;
+	F.ax1.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
+	F.ax1.YTick = [ymin 0 ymax] * 0.8;
+	F.ax1.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
+	axis square;
+	axis off;
+	% formatted title
+	if F.isB
+		title(['$c B_z / (' num2str(round(Ez0*10^zdigits)/10^zdigits) ' B_0)$'], ...
+			'Interpreter','latex')
+	else
+		title(['$E_z / (' num2str(round(Ez0*10^zdigits)/10^zdigits) ' E_0)$'], ...
+			'Interpreter','latex')
+	end
+end
+
 end % methods
 end % classdef
