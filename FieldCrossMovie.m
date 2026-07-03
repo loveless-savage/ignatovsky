@@ -1,21 +1,28 @@
 %% show result w/ diagnostic plots
-function F = FieldCrossMovie(x, y, z, Exr, Eyr, Ezr, paramVals, options) %movieName)
+function F = FieldCrossMovie(x, y, Exr, Eyr, Ezr, paramVals, options)
 arguments
 	x double % observation coordinates (grids)
 	y double
-	z double
 	Exr double % field components
 	Eyr double
 	Ezr double
 	paramVals double % independent variable varying between frames
 	% name-value arguments
 	options.renderParams cell = {'legend',false};
+	options.altE cell = {}
 	options.live logical = false % use arrow keys to interact?
 	options.windowName string
 	options.movieName string % TODO: default?
 end
 
-F = FieldCrossRender(x, y, Exr(:,:,1),Eyr(:,:,1),Ezr(:,:,1), options.renderParams{:});
+altEslice = @(altE,n) cellfun(@(e) e(:,:,n),altE,'UniformOutput',false);
+if isfield(options,'altE')
+	F = FieldCrossRender(x, y, Exr(:,:,1),Eyr(:,:,1),Ezr(:,:,1),...
+		options.renderParams{:},'altE',altEslice(options.altE,1));
+else
+	F = FieldCrossRender(x, y, Exr(:,:,1),Eyr(:,:,1),Ezr(:,:,1),...
+		options.renderParams{:});
+end
 if isfield(options,'windowName')
 	F.fig.Name = sprintf(options.windowName+" [%d]",paramVals(n),1);
 end
@@ -23,18 +30,19 @@ end
 % interactive: use arrow keys to switch between frames
 if isfield(options,'live') && options.live
 	F.fig.UserData = 1;
-	F.fig.KeyReleaseFcn = {@slide,paramVals,F,x,y,z,Exr,Eyr,Ezr};
+	F.fig.KeyReleaseFcn = {@slide,paramVals,F,x,y,Exr,Eyr,Ezr};
 % non-interactive: print series to video file
 else
 	mkdir("figures/"+options.movieName)
 	for n = 1:length(paramVals)
 		fprintf("n=%d\n",n);
-		F.Render(x, y, Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n),paramVals(n));
+		F.altE = altEslice(options.altE,n);
+		F.Render(x, y, Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n),paramVals(:,n));
 		saveas(F.fig,"figures/"+options.movieName+"/"+num2str(n,"%02d")+".tif");
 	end
 end
 
-function slide(src,event,paramVals,F,x,y,z,Exr,Eyr,Ezr)
+function slide(src,event,paramVals,F,x,y,Exr,Eyr,Ezr)
 	n = src.UserData;
 	switch event.Key
 		case {'leftarrow','uparrow','k'}
@@ -53,8 +61,9 @@ function slide(src,event,paramVals,F,x,y,z,Exr,Eyr,Ezr)
 			return;
 	end
 	fprintf("n=%d\n",n);
-	F.Render(x, y, Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n),paramVals(n));
-	F.fig.Name = "theta="+string(paramVals(n))+" ["+string(n)+"]"; % TODO
+	F.altE = altEslice(options.altE,n);
+	F.Render(x, y, Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n),paramVals(:,n));
+	F.fig.Name = "theta="+string(paramVals(n))+" ["+string(n)+"]";
 	src.UserData = n;
 end
 end
