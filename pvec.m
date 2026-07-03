@@ -1,5 +1,5 @@
 %% polarization vector at the surface of the mirror
-function [pex,pey,pez,pbx,pby,pbz] = pvec(xi,yi)
+function [pex,pey,pez,pbx,pby,pbz] = pvec(xi,yi,Env)
 global f;
 
 % radius of parabola
@@ -15,3 +15,12 @@ pez = xi/f./znorm;
 pbx = pey;
 pby = (1+(xi.^2-yi.^2)/4/f^2)./znorm;
 pbz = yi/f./znorm;
+
+if (nargin>2)
+	pex = pex.*Env;
+	pey = pey.*Env;
+	pez = pez.*Env;
+	pbx = pbx.*Env;
+	pby = pby.*Env;
+	pbz = pbz.*Env;
+end
