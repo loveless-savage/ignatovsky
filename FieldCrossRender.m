@@ -3,6 +3,7 @@ classdef FieldCrossRender
 properties
 	fig % figure itself
 	paramText = "$z = %3.2f \\lambda$"; % left corner text
+	paramText2 = ""; % right corner text (suppressed by legend box)
 	drawLineout = true; % deactivates dashed line on upper plots + 2D lower row
 	altE = {}; % for comparing more than 1 field
 	isB = false; % change label formatting when rendering E and B
@@ -42,6 +43,7 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 		options.figWidth  double = 10 %15 %6.7
 		options.figHeight double = 6.9 %10.35 %4.6
 		options.paramText string = ''
+		options.paramText2 string = ''
 		options.drawLineout logical = true
 		options.altE cell = {}
 		options.isB logical = false
@@ -56,6 +58,9 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 
 	if isfield(options,'paramText')
 		F.paramText = options.paramText;
+	end
+	if isfield(options,'paramText2')
+		F.paramText2 = options.paramText2;
 	end
 	if isfield(options,'altE')
 		F.altE = options.altE;
@@ -177,6 +182,11 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 	zdigits = ceil(-log10(Ez0/Ex0));
 	title(['$E_z / (' num2str(round(Ez0/Ex0*10^zdigits)/10^zdigits) ' E_0)$'], ...
 		'Interpreter','latex')
+	% add secondary label in top right if no lower plots
+	if F.drawLegend==0 && (F.drawLineout==1 || length(F.altE)==0) && strcmp(F.paramText2,"")==0
+		text(xmax,xmax*1.6,F.paramText2,...
+			'Interpreter','latex','FontSize',1.5*F.figWidth,'HorizontalAlignment','right');
+	end
 	% cross-section line
 	if F.drawLineout==1
 		hold on
@@ -359,7 +369,7 @@ function F = lowerPlots(F, x, y, Exp, Eyp, Ezp, xrange, yrange)
 		title(['$E_x / E_0$'], ...
 			'Interpreter','latex')
 		hold on
-		text(xmin,-ymin*1.3,"Bottom = Ignatovsky", ...
+		text(xmin,-ymin*1.3,F.paramText2, ...
 			'Interpreter','latex','FontSize',14);
 		hold off
 	end
