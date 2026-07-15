@@ -1,9 +1,12 @@
 %% build a grid of coordinates on a mirror surface, offset from the mirror axis
-function [xi,yi,Env,dA] = mirror(N,oap,oaphi)
+function [xi,yi,Env,dA] = mirror(N,oap,oaphi,wbeamalt)
 global k wbeam f;
 
 % mirror radius: a little wider than the beam to capture rim of Gaussian
 D = 4.0*wbeam;
+if nargin>3
+	D = wbeamalt;
+end
 % off-axis center of beam
 x0 = 2*f*tan(oap/2)*cos(oaphi);
 y0 = 2*f*tan(oap/2)*sin(oaphi);
@@ -18,5 +21,8 @@ yrange = ymin:(ymax-ymin)/(N-1):ymax;
 [xi,yi] = meshgrid(xrange,yrange);
 % incident beam profile
 Env = exp(-((xi-x0).^2+(yi-y0).^2)/wbeam^2);
+if nargin>3
+	Env = exp(-((xi-x0).^2+(yi-y0).^2)/wbeamalt^2);
+end
 % Riemann sum needs a differential multiplier
 dA = (xmax-xmin)*(ymax-ymin)/N^2;
