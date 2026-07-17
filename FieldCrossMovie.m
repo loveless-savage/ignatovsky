@@ -12,7 +12,8 @@ arguments
 	options.altE cell = {}
 	options.live logical = false % use arrow keys to interact?
 	options.windowName string
-	options.movieName string % TODO: default?
+	options.movieName string
+	%options.drawCircle logical = false TODO
 end
 
 altEslice = @(altE,n) cellfun(@(e) e(:,:,n),altE,'UniformOutput',false);
@@ -37,7 +38,7 @@ else
 	for n = 1:length(paramVals)
 		fprintf("n=%d\n",n);
 		F.altE = altEslice(options.altE,n);
-		F.Render(x, y, Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n),paramVals(:,n));
+		F.Render(x, y, Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n),paramVals(:,n),paramVals(1,n),paramVals(2,n));
 		saveas(F.fig,"figures/"+options.movieName+"/"+num2str(n,"%02d")+".tif");
 	end
 end

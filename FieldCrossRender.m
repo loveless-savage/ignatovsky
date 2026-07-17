@@ -105,7 +105,7 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 	F = F.Render(x, y, Ex, Ey, Ez, 0);
 end
 
-function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
+function F = Render(F, x, y, Ex, Ey, Ez, paramVal, oap, oaphi)
 	% scale label text with figure size: it happens that figWidth (Inches) = FontSize (pts) looks nice
 	set(0,'DefaultAxesFontSize',F.figWidth);
 	clf(F.fig);
@@ -148,6 +148,10 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 	if F.drawLineout==1
 		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
 	end
+	% TODO: draw envelope circle
+	if nargin>7
+		drawCircle(oap,oaphi);
+	end
 	hold off
 
 	% upper middle axes: y-component
@@ -167,8 +171,13 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 		hold on
 		plot3([-sqrt(xmin^2/2),sqrt(xmax^2/2)],[-sqrt(xmin^2/2),sqrt(xmax^2/2)],[2,2], ...
 			'w--','LineWidth',1);
-		hold off
 	end
+	% TODO: draw envelope circle
+	if nargin>7
+		hold on
+		drawCircle(oap,oaphi);
+	end
+	hold off
 
 	% upper right axes: z-component
 	F.az2=axes('position',[.71 F.figHeight(2) .25 F.figHeight(4)]);
@@ -191,8 +200,13 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal)
 	if F.drawLineout==1
 		hold on
 		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
-		hold off
 	end
+	% TODO: draw envelope circle
+	if nargin>7
+		hold on
+		drawCircle(oap,oaphi);
+	end
+	hold off
 
 	if F.drawLineout==1
 		F = F.lineout(x,y,Ex,Ey,Ez,xrange,yrange);
@@ -421,3 +435,13 @@ end
 
 end % methods
 end % classdef
+
+function drawCircle(oap,oaphi)
+	f = 200; wbeam = 50;
+	x0 = 2*f*tand(oap/2)*cosd(oaphi);
+	y0 = 2*f*tand(oap/2)*sind(oaphi);
+	circleq = 0:0.01:6.28;
+	circlex = wbeam*cos(circleq) + x0;
+	circley = wbeam*sin(circleq) + y0;
+	plot(circlex,circley,'w','LineWidth',2);
+end
