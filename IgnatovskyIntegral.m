@@ -1,10 +1,10 @@
 %% circular gaussian pulse, integrating off a full parabolic mirror.
-function [Ex,Ey,Ez,Bx,By,Bz]=IgnatovskyIntegral(x,y,z,t,oap,oaphi)
+function [Ex,Ey,Ez,Bx,By,Bz]=IgnatovskyIntegral(x,y,z,oap,oaphi)
 global k wbeam f;
 
 %% mirror + beam setup
 % integration resolution
-N = 65;
+N = 33;
 % set up coordinate grid against mirror surface, as well as laser envelope and integration differential
 [xi,yi,Env,dA] = mirror(N,oap,oaphi);
 % radius of parabola
@@ -40,7 +40,7 @@ for m=1:numel(x)
         .* exp(1i*k*(kx(mask).*x(m) ...
                    + ky(mask).*y(m) ...
                    + kz(mask).*z(m))) ...
-        .* -1i.*exp(1i*(k*f-t))*k/(2*pi*f) .* dA;
+        .* -1i.*exp(1i*(k*f))*k/(2*pi*f) .* dA;
     % vector portions
     Ex(m) = sum(E_intg.*pex(mask),"all");
     Ey(m) = sum(E_intg.*pey(mask),"all");

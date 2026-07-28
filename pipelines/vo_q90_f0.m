@@ -5,7 +5,7 @@ zoffset = 10;
 f = f*cos(oap/2)^2; % convert from effective focal length to parent focal length
 [x,y,z,xo,yo,zo] = camera(N,zoffset,-oap,oaphi);
 
-[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,t,oap,oaphi);
+[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,oap,oaphi);
 [Ex,Ey,Ez] = rot(Exo,Eyo,Ezo,oap,oaphi);
 [Exp,Eyp,Ezp] = Soap(x,y,z,oap,oaphi);
 

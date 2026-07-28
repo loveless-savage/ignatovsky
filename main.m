@@ -7,7 +7,6 @@ fnum = 2; % asymptotic cone angle of beam -- < 3 is a pretty wide focus
 oap = deg2rad(0); % OAP angle
 oaphi = deg2rad(0); % azimuthal angle of OAP cut relative to polarization
 zoffset = 0;% displacement from focal plane
-t = 0; % time since peak of pulse hits
 
 % derived beam parameters
 f = 2*wbeam*fnum; % focal length of parabolic mirror: should be further than z0
