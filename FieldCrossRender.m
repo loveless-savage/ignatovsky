@@ -4,28 +4,34 @@ properties
 	fig % figure itself
 	paramText = "$z = %3.2f \\lambda$"; % left corner text
 	paramText2 = ""; % right corner text (suppressed by legend box)
-	drawLineout = true; % deactivates dashed line on upper plots + 2D lower row
+	drawLineout = true; % whether to include 2D lower row
+	drawAlt = false; % whether to show an additional phase plot using altE
 	altE = {}; % for comparing more than 1 field
 	isB = false; % change label formatting when rendering E and B
 	drawHeader = true;
 	drawLegend = false;
 end
 properties (SetAccess = private)
-	ax2 % upper plots
-	ay2
-	az2
-	ax1 % lower plots
-	ay1
-	az1
+	axm % main plots
+	aym
+	azm
+	axl % lineout plots
+	ayl
+	azl
+	axa % alt plots
+	aya
+	aza
 	figWidth = 10
 	% components of figHeight are:
 	% 1. total figure height in Inches
 	% 2. normalized vertical alignment of main image row
-	% 3. normalized vertical alignment of lower image row
-	% 4. normalized image height
-	% 5. normalized vertical alignment of header colorbar
-	% 6. normalized colorbar height
-	figHeight = [7.2 0.49 0.09 0.33 0.89 0.05];
+	% 3. normalized vertical alignment of lineout image row
+	% 4. normalized vertical alignment of altE image row
+	% 5. normalized image height
+	% 6. normalized vertical alignment of header colorbar
+	% 7. normalized colorbar height
+	figHeight = [7.2 0.49 0.09 0.09 0.33 0.89 0.05];
+	sf = 1 % scaling factor, comparing to width 10"
 end
 
 methods
@@ -40,11 +46,11 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 		% name-value arguments
 		options.figX double = 6.9 %0.0,6.9,13.8
 		options.figY double = 4.0
-		options.figWidth  double = 10 %15 %6.7
-		options.figHeight double = 6.9 %10.35 %4.6
+		options.figWidth double = 10
 		options.paramText string = ''
 		options.paramText2 string = ''
 		options.drawLineout logical = true
+		options.drawAlt logical = false
 		options.altE cell = {}
 		options.isB logical = false
 		options.drawHeader logical = true
@@ -53,8 +59,9 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 
 	if isfield(options,'figWidth')
 		F.figWidth = options.figWidth;
+		F.sf = F.figWidth/10;
 	end
-	F.figHeight(1) = options.figHeight+0.3;
+	F.figHeight(1) = 7.2*F.sf;
 
 	if isfield(options,'paramText')
 		F.paramText = options.paramText;
@@ -62,39 +69,63 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 	if isfield(options,'paramText2')
 		F.paramText2 = options.paramText2;
 	end
+	if isfield(options,'drawLineout')
+		F.drawLineout = options.drawLineout;
+	end
+	if isfield(options,'drawAlt')
+		F.drawAlt = options.drawAlt;
+	end
 	if isfield(options,'altE')
 		F.altE = options.altE;
 	end
 	if isfield(options,'isB')
 		F.isB = options.isB;
 	end
-	if isfield(options,'drawHeader') && options.drawHeader==0
+	if isfield(options,'drawHeader')
 		F.drawHeader = options.drawHeader;
-		% adjust figure height
-		F.figHeight(1) = F.figHeight(1) - 0.8/6.9*options.figHeight;
-		% these numbers apply to no header, but lineout still on
-		F.figHeight(2) = 0.55;
-		F.figHeight(3) = 0.1;
-		F.figHeight(4) = 0.37;
-	end
-	if isfield(options,'drawLineout') && options.drawLineout==0 && length(F.altE)==0
-		F.drawLineout = options.drawLineout;
-		% adjust figure height
-		F.figHeight(1) = F.figHeight(1) - 3.2/6.9*options.figHeight;
-		if F.drawHeader==0 % both lineout and header turned off
-			F.figHeight(2) = 0.1;
-			F.figHeight(4) = 0.74;
-		else % header but no lineout
-			F.figHeight(2) = 0.078;
-			F.figHeight(4) = 0.6;
-			F.figHeight(5) = 0.8;
-			F.figHeight(6) = 0.09;
-		end
-	elseif isfield(options,'drawLineout') && options.drawLineout==0
-		F.drawLineout = options.drawLineout;
 	end
 	if F.drawLineout==1 && F.drawHeader==1 && isfield(options,'drawLegend')
 		F.drawLegend = options.drawLegend;
+	end
+
+	% figure heights for 2 plot rows (default) but no header
+	if options.drawHeader==0
+		F.figHeight(1) = 6.4*F.sf;
+		F.figHeight(2) = 0.55;
+		F.figHeight(3) = 0.1;
+		F.figHeight(4) = 0.1;
+		F.figHeight(5) = 0.37;
+	end
+	% figure heights for 1 plot row
+	if F.drawLineout==0 && F.drawAlt==0
+		if F.drawHeader==0 % no header
+			F.figHeight(1) = 3.2*F.sf;
+			F.figHeight(2) = 0.1;
+			F.figHeight(5) = 0.74;
+		else % header
+			F.figHeight(1) = 4.0*F.sf;
+			F.figHeight(2) = 0.078;
+			F.figHeight(5) = 0.6;
+			F.figHeight(6) = 0.8;
+			F.figHeight(7) = 0.09;
+		end
+	% figure heights for 3 plot rows
+	elseif F.drawAlt==1 && (F.drawLineout==1 || length(F.altE)>3)
+		if F.drawHeader==0 % no header
+			F.figHeight(1) = 9.6*F.sf;
+			F.figHeight(2) = 0.4;
+			F.figHeight(3) = 0.1;
+			F.figHeight(4) = 0.7;
+			F.figHeight(5) = 0.247;
+		else % header
+			F.figHeight(1) = 10.4*F.sf;
+			F.figHeight(2) = 0.37;
+			F.figHeight(3) = 0.09;
+			F.figHeight(4) = 0.64;
+			F.figHeight(5) = 0.23;
+			F.figHeight(6) = 0.924;
+			F.figHeight(7) = 0.034;
+		end
 	end
 
 	F.fig = figure('Units','Inches','Position', ...
@@ -106,8 +137,9 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 end
 
 function F = Render(F, x, y, Ex, Ey, Ez, paramVal, oap, oaphi)
-	% scale label text with figure size: it happens that figWidth (Inches) = FontSize (pts) looks nice
-	set(0,'DefaultAxesFontSize',F.figWidth);
+	% scale label text with figure size
+	set(0,'DefaultAxesFontSize',16);
+	fontsize(scale=F.sf);
 	clf(F.fig);
 	%% boundary information about observation plane from given meshgrids
 	% value ranges
@@ -123,10 +155,10 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal, oap, oaphi)
 	phsglobal = conj(Ex0complex)/abs(Ex0complex);
 
 	% upper left axes: x-component
-	F.ax2=axes('position',[.05 F.figHeight(2) .25 F.figHeight(4)]);
+	F.axm=axes('position',[.05 F.figHeight(2) .25 F.figHeight(5)]);
 	% render complex phase
 	image([xmin xmax],[ymin ymax],PhaseColor(Ex/Ex0*phsglobal,5));
-	set(F.ax2,'YDir','normal'); % image() reverses y-axis coordinates
+	set(F.axm,'YDir','normal'); % image() reverses y-axis coordinates
 	axis square;
 	axis off;
 	% title w/ formatting
@@ -137,29 +169,27 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal, oap, oaphi)
 	% included with the upper left plot is the label reporting our slicing parameter
 	% (z-plane, slicing angle, etc)
 	if F.drawHeader==1
-		text(xmin,xmax*1.6,sprintf(F.paramText,paramVal), ...
-			'Interpreter','latex','FontSize',1.5*F.figWidth);
+		annotation('textbox',[.05 F.figHeight(6) .1 F.figHeight(7)],...
+			'String',sprintf(F.paramText,paramVal),...
+			'Interpreter','latex','FontSize',20,'EdgeColor','none');
 	else
-		annotation('textbox',[0.048 0.37 0.1 0.1],'String',sprintf(F.paramText,paramVal),...
-			'Interpreter','latex','FontSize',1.5*F.figWidth,...
+		annotation('textbox',[0.048 0.37 0.1 0.1],...
+			'String',sprintf(F.paramText,paramVal),...
+			'Interpreter','latex','FontSize',20,...
 			'EdgeColor','none','Rotation',90);
 	end
 	% cross-section line
 	if F.drawLineout==1
 		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
 	end
-	% TODO: draw envelope circle
-	if nargin>7
-		drawCircle(oap,oaphi);
-	end
 	hold off
 
 	% upper middle axes: y-component
-	F.ay2=axes('position',[.38 F.figHeight(2) .25 F.figHeight(4)]);
+	F.aym=axes('position',[.38 F.figHeight(2) .25 F.figHeight(5)]);
 	% render complex phase
 	Ey0 = max(abs(Ey),[],"all");
 	image([xmin xmax],[ymin ymax],PhaseColor(Ey/Ey0*phsglobal,5));
-	set(F.ay2,'YDir','normal');
+	set(F.aym,'YDir','normal');
 	axis square;
 	axis off;
 	% formatted title
@@ -167,24 +197,19 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal, oap, oaphi)
 	title(['$E_y / (' num2str(round(Ey0/Ex0*10^ydigits)/10^ydigits) ' E_0)$'], ...
 		'Interpreter','latex')
 	% cross-section line (diagonal on this one)
+	hold on
 	if F.drawLineout==1
-		hold on
 		plot3([-sqrt(xmin^2/2),sqrt(xmax^2/2)],[-sqrt(xmin^2/2),sqrt(xmax^2/2)],[2,2], ...
 			'w--','LineWidth',1);
-	end
-	% TODO: draw envelope circle
-	if nargin>7
-		hold on
-		drawCircle(oap,oaphi);
 	end
 	hold off
 
 	% upper right axes: z-component
-	F.az2=axes('position',[.71 F.figHeight(2) .25 F.figHeight(4)]);
+	F.azm=axes('position',[.71 F.figHeight(2) .25 F.figHeight(5)]);
 	% render complex phase
 	Ez0 = max(abs(Ez),[],"all");
 	image([xmin xmax],[ymin ymax],PhaseColor(Ez/Ez0*phsglobal,5));
-	set(F.az2,'YDir','normal');
+	set(F.azm,'YDir','normal');
 	axis square;
 	axis off;
 	% formatted title
@@ -197,44 +222,25 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal, oap, oaphi)
 			'Interpreter','latex','FontSize',1.5*F.figWidth,'HorizontalAlignment','right');
 	end
 	% cross-section line
+	hold on
 	if F.drawLineout==1
-		hold on
 		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
-	end
-	% TODO: draw envelope circle
-	if nargin>7
-		hold on
-		drawCircle(oap,oaphi);
 	end
 	hold off
 
 	if F.drawLineout==1
 		F = F.lineout(x,y,Ex,Ey,Ez,xrange,yrange);
-	elseif length(F.altE)>0
-		F = F.lowerPlots(x,y,...
+	end
+	if F.drawAlt==1
+		F = F.altPlots(x,y,...
 			cell2mat(F.altE(1)),cell2mat(F.altE(2)),cell2mat(F.altE(3)),...
 			xrange,yrange);
 	end
+	% TODO: lineout=false,alt=true,altE>3 --> draw bottom row
 
 	% top colorbar
 	if F.drawHeader==1
-		acb=axes('position',[.38 F.figHeight(5) .25 F.figHeight(6)]);
-		% render spectrum of phase colors
-		phase = 0:pi/50:2*pi;
-		amplitude = 0:0.02:1;
-		[P,A] = meshgrid(phase,amplitude);
-		image([0 2*pi],[0 1],PhaseColor(A.*exp(1i*P),5));
-		set(acb,'YDir','normal','XAxisLocation','top');
-		% label axes
-		xlabel('phase');
-		ylabel('amp.');
-		% add range labels to axes
-		acb.XTick = [0 pi 2*pi];
-		acb.XTickLabel = {'0','\pi','2\pi'};
-		acb.YTick = [-1 0 1];
-		% reposition x-axis label
-		xlabh = get(acb,'XLabel');
-		set(xlabh,'Position',get(xlabh,'Position') - [0 .2 0]);
+		F = F.colorbar();
 	end
 end
 
@@ -252,31 +258,46 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange)
 
 	% second lineout for comparison?
 	if length(F.altE)>0
-		Exp = cell2mat(F.altE(1));
-		Eyp = cell2mat(F.altE(2));
-		Ezp = cell2mat(F.altE(3));
-		Expf = interp2(x,y,Exp,xrange,0*yrange);
-		Eypf = interp2(x,y,Eyp,sqrt(0.5)*xrange,sqrt(0.5)*yrange);
-		Ezpf = interp2(x,y,Ezp,xrange,0*yrange);
-		Exp0 = max(abs(Exp),[],"all");
-		Eyp0 = max(abs(Eyp),[],"all");
-		Ezp0 = max(abs(Ezp),[],"all");
+		Exa = cell2mat(F.altE(1));
+		Eya = cell2mat(F.altE(2));
+		Eza = cell2mat(F.altE(3));
+		Exaf = interp2(x,y,Exa,xrange,0*yrange);
+		Eyaf = interp2(x,y,Eya,sqrt(0.5)*xrange,sqrt(0.5)*yrange);
+		Ezaf = interp2(x,y,Eza,xrange,0*yrange);
+		Exa0 = max(abs(Exa),[],"all");
+		Eya0 = max(abs(Eya),[],"all");
+		Eza0 = max(abs(Eza),[],"all");
+	end
+	% include singh model lineout
+	if length(F.altE)>3
+		Exs = cell2mat(F.altE(4));
+		Eys = cell2mat(F.altE(5));
+		Ezs = cell2mat(F.altE(6));
+		Exsf = interp2(x,y,Exs,xrange,0*yrange);
+		Eysf = interp2(x,y,Eys,sqrt(0.5)*xrange,sqrt(0.5)*yrange);
+		Ezsf = interp2(x,y,Ezs,xrange,0*yrange);
+		Exs0 = max(abs(Exs),[],"all");
+		Eys0 = max(abs(Eys),[],"all");
+		Ezs0 = max(abs(Ezs),[],"all");
 	end
 
-	% lower left axes: x-cross section
-	F.ax1=axes('position',[.05 F.figHeight(3) .25 F.figHeight(4)]);
-	plot(xrange,abs(Exf)/Ex0,'Color',[49,54,143]/255,'LineWidth',1.5);
-	if length(F.altE)>0
-		hold on
-		plot(xrange,abs(Expf)/Exp0,'Color',[200,0,0]/255,'LineWidth',1.5);
-		hold off
+	% left axes: x-cross section
+	F.axl=axes('position',[.05 F.figHeight(3) .25 F.figHeight(5)]);
+	hold on
+	if length(F.altE)>3
+		plot(xrange,abs(Exsf)/Exs0,'--','Color',[49,54,143]/255,'LineWidth',1.0);
 	end
-	set(F.ax1,'YDir','normal');
+	if length(F.altE)>0
+		plot(xrange,abs(Exaf)/Exa0,'Color',[200,0,0]/255,'LineWidth',1.5);
+	end
+	plot(xrange,abs(Exf)/Ex0,'Color',[49,54,143]/255,'LineWidth',1.5);
+	hold off
+	set(F.axl,'YDir','normal');
 	% label axes
 	xlabel('$r / \lambda$','Interpreter','latex');
-	F.ax1.XTick = [xmin 0 xmax] * 0.8;
-	F.ax1.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
-	F.ax1.YTick = [0 1];
+	F.axl.XTick = [xmin 0 xmax] * 0.8;
+	F.axl.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
+	F.axl.YTick = [0 1];
 	xlim([xmin xmax]);
 	ylim([0 1.05]);
 	axis square;
@@ -287,26 +308,32 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange)
 	if F.drawLegend==1
 		legendList={'MSM'};
 		if length(F.altE)>0
-			legendList(2)={'Ignatovsky'};
+			legendList=[{'Ignatovsky'} legendList];
 		end
-		la=legend(legendList,'Location','southwest');
-		set(la, 'Position',[0.75 0.9 .1 .05]);
+		if length(F.altE)>3
+			legendList=[{'Singh'} legendList];
+		end
+		la=legend(legendList,'Location','southwest','Direction','reverse');
+		set(la, 'Position',[0.79 F.figHeight(6) .1 .05]);
 	end
 
-	% lower middle axes: y-cross section
-	F.ay1=axes('position',[.38 F.figHeight(3) .25 F.figHeight(4)]);
-	plot(xrange,abs(Eyf)/Ey0,'Color',[49,54,143]/255,'LineWidth',1.5);
-	if length(F.altE)>0
-		hold on
-		plot(xrange,abs(Eypf)/Eyp0,'Color',[200,0,0]/255,'LineWidth',1.5);
-		hold off
+	% middle axes: y-cross section
+	F.ayl=axes('position',[.38 F.figHeight(3) .25 F.figHeight(5)]);
+	hold on
+	if length(F.altE)>3
+		plot(xrange,abs(Eysf)/Eys0,'--','Color',[49,54,143]/255,'LineWidth',1.0);
 	end
-	set(F.ay1,'YDir','normal');
+	if length(F.altE)>0
+		plot(xrange,abs(Eyaf)/Eya0,'Color',[200,0,0]/255,'LineWidth',1.5);
+	end
+	plot(xrange,abs(Eyf)/Ey0,'Color',[49,54,143]/255,'LineWidth',1.5);
+	hold off
+	set(F.ayl,'YDir','normal');
 	% label axes
 	xlabel('$r / \lambda$','Interpreter','latex');
-	F.ay1.XTick = [xmin 0 xmax] * 0.8;
-	F.ay1.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
-	F.ay1.YTick = [0 1];
+	F.ayl.XTick = [xmin 0 xmax] * 0.8;
+	F.ayl.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
+	F.ayl.YTick = [0 1];
 	xlim([xmin xmax]);
 	ylim([0 1.05]);
 	axis square;
@@ -316,20 +343,23 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange)
 		num2str(round(Ey0/Ex0*10^ydigits)/10^ydigits) ...
 		' E_0)$'], 'Interpreter','latex')
 
-	% lower right axes: z-cross section
-	F.az1=axes('position',[.71 F.figHeight(3) .25 F.figHeight(4)]);
-	plot(xrange,abs(Ezf)/Ez0,'Color',[49,54,143]/255,'LineWidth',1.5);
-	if length(F.altE)>0
-		hold on
-		plot(xrange,abs(Ezpf)/Ezp0,'Color',[200,0,0]/255,'LineWidth',1.5);
-		hold off
+	% right axes: z-cross section
+	F.azl=axes('position',[.71 F.figHeight(3) .25 F.figHeight(5)]);
+	hold on
+	if length(F.altE)>3
+		plot(xrange,abs(Ezsf)/Ezs0,'--','Color',[49,54,143]/255,'LineWidth',1.0);
 	end
-	set(F.az1,'YDir','normal');
+	if length(F.altE)>0
+		plot(xrange,abs(Ezaf)/Eza0,'Color',[200,0,0]/255,'LineWidth',1.5);
+	end
+	plot(xrange,abs(Ezf)/Ez0,'Color',[49,54,143]/255,'LineWidth',1.5);
+	hold off
+	set(F.azl,'YDir','normal');
 	% label axes
 	xlabel('$r / \lambda$','Interpreter','latex');
-	F.az1.XTick = [xmin 0 xmax] * 0.8;
-	F.az1.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
-	F.az1.YTick = [0 1];
+	F.azl.XTick = [xmin 0 xmax] * 0.8;
+	F.azl.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
+	F.azl.YTick = [0 1];
 	xlim([xmin xmax]);
 	ylim([0 1.05]);
 	axis square;
@@ -340,7 +370,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange)
 		' E_0)$'], 'Interpreter','latex')
 end
 
-function F = lowerPlots(F, x, y, Exp, Eyp, Ezp, xrange, yrange)
+function F = altPlots(F, x, y, Exp, Eyp, Ezp, xrange, yrange)
 	% min/max values
 	xmin = min(xrange); xmax = max(xrange);
 	ymin = min(yrange); ymax = max(yrange);
@@ -362,17 +392,17 @@ function F = lowerPlots(F, x, y, Exp, Eyp, Ezp, xrange, yrange)
 		ydigits = ceil(-log10(Ey0/Ex0));
 		zdigits = ceil(-log10(Ez0/Ex0));
 	end
-	% lower left axes: x-cross section
-	F.ax1=axes('position',[.05 F.figHeight(3) .25 F.figHeight(4)]);
+	% left axes: x-cross section
+	F.axa=axes('position',[.05 F.figHeight(4) .25 F.figHeight(5)]);
 	% render complex phase
 	image([xmin xmax],[ymin ymax],PhaseColor(Exp/Ex0*phsglobal,5));
-	set(F.ax2,'YDir','normal'); % image() reverses y-axis coordinates
+	set(F.axa,'YDir','normal'); % image() reverses y-axis coordinates
 	% label axes
 	xlabel('$r / f$','Interpreter','latex');
-	F.ax1.XTick = [xmin 0 xmax] * 0.8;
-	F.ax1.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
-	F.ax1.YTick = [ymin 0 ymax] * 0.8;
-	F.ax1.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
+	F.axa.XTick = [xmin 0 xmax] * 0.8;
+	F.axa.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
+	F.axa.YTick = [ymin 0 ymax] * 0.8;
+	F.axa.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
 	axis square;
 	axis off;
 	% title w/ formatting
@@ -388,17 +418,17 @@ function F = lowerPlots(F, x, y, Exp, Eyp, Ezp, xrange, yrange)
 		hold off
 	end
 
-	% lower middle axes: y-cross section
-	F.ay1=axes('position',[.38 F.figHeight(3) .25 F.figHeight(4)]);
+	% middle axes: y-cross section
+	F.aya=axes('position',[.38 F.figHeight(4) .25 F.figHeight(5)]);
 	% render complex phase
 	image([xmin xmax],[ymin ymax],PhaseColor(Eyp/Ey0*phsglobal,5));
-	set(F.ay2,'YDir','normal');
+	set(F.aya,'YDir','normal');
 	% label axes
 	xlabel('$r / f$','Interpreter','latex');
-	F.ax1.XTick = [xmin 0 xmax] * 0.8;
-	F.ax1.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
-	F.ax1.YTick = [ymin 0 ymax] * 0.8;
-	F.ax1.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
+	F.aya.XTick = [xmin 0 xmax] * 0.8;
+	F.aya.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
+	F.aya.YTick = [ymin 0 ymax] * 0.8;
+	F.aya.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
 	axis square;
 	axis off;
 	% formatted title
@@ -410,17 +440,17 @@ function F = lowerPlots(F, x, y, Exp, Eyp, Ezp, xrange, yrange)
 			'Interpreter','latex')
 	end
 
-	% lower right axes: z-cross section
-	F.az1=axes('position',[.71 F.figHeight(3) .25 F.figHeight(4)]);
+	% right axes: z-cross section
+	F.aza=axes('position',[.71 F.figHeight(4) .25 F.figHeight(5)]);
 	% render complex phase
 	image([xmin xmax],[ymin ymax],PhaseColor(Ezp/Ez0*phsglobal,5));
-	set(F.az2,'YDir','normal');
+	set(F.aza,'YDir','normal');
 	% label axes
 	xlabel('$r / f$','Interpreter','latex');
-	F.ax1.XTick = [xmin 0 xmax] * 0.8;
-	F.ax1.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
-	F.ax1.YTick = [ymin 0 ymax] * 0.8;
-	F.ax1.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
+	F.aza.XTick = [xmin 0 xmax] * 0.8;
+	F.aza.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
+	F.aza.YTick = [ymin 0 ymax] * 0.8;
+	F.aza.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
 	axis square;
 	axis off;
 	% formatted title
@@ -433,15 +463,26 @@ function F = lowerPlots(F, x, y, Exp, Eyp, Ezp, xrange, yrange)
 	end
 end
 
+function F = colorbar(F)
+	acb=axes('position',[.38 F.figHeight(6) .25 F.figHeight(7)]);
+	% render spectrum of phase colors
+	phase = 0:pi/50:2*pi;
+	amplitude = 0:0.02:1;
+	[P,A] = meshgrid(phase,amplitude);
+	image([0 2*pi],[0 1],PhaseColor(A.*exp(1i*P),5));
+	set(acb,'YDir','normal','XAxisLocation','top');
+	% label axes
+	xlabel('phase');
+	ylabel('amp.');
+	% add range labels to axes
+	acb.XTick = [0 pi 2*pi];
+	acb.XTickLabel = {'0','\pi','2\pi'};
+	acb.YTick = [-1 0 1];
+	% reposition x-axis label
+	xlabh = get(acb,'XLabel');
+	set(xlabh,'Position',get(xlabh,'Position') - [0 .2 0]);
+end
+
 end % methods
 end % classdef
 
-function drawCircle(oap,oaphi)
-	f = 200; wbeam = 50;
-	x0 = 2*f*tand(oap/2)*cosd(oaphi);
-	y0 = 2*f*tand(oap/2)*sind(oaphi);
-	circleq = 0:0.01:6.28;
-	circlex = wbeam*cos(circleq) + x0;
-	circley = wbeam*sin(circleq) + y0;
-	plot(circlex,circley,'w','LineWidth',2);
-end

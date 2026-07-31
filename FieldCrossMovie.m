@@ -8,15 +8,23 @@ arguments
 	Ezr double
 	paramVals double % independent variable varying between frames
 	% name-value arguments
-	options.renderParams cell = {'legend',false};
+	options.renderParams cell = {'drawLegend',false};
 	options.altE cell = {}
 	options.live logical = false % use arrow keys to interact?
 	options.windowName string
 	options.movieName string
-	%options.drawCircle logical = false TODO
 end
 
-altEslice = @(altE,n) cellfun(@(e) e(:,:,n),altE,'UniformOutput',false);
+function eout = varlengthslice(e,n)
+	if size(e,3)>1
+		eout = e(:,:,n);
+	else
+		eout = e(:,:);
+	end
+end
+altEslice = @(altE,n) cellfun(@(e) varlengthslice(e,n),...
+	altE,'UniformOutput',false);
+
 if isfield(options,'altE')
 	F = FieldCrossRender(x, y, Exr(:,:,1),Eyr(:,:,1),Ezr(:,:,1),...
 		options.renderParams{:},'altE',altEslice(options.altE,1));
@@ -39,7 +47,7 @@ else
 		fprintf("n=%d\n",n);
 		F.altE = altEslice(options.altE,n);
 		F.Render(x, y, Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n),paramVals(:,n),paramVals(1,n),paramVals(2,n));
-		saveas(F.fig,"figures/"+options.movieName+"/"+num2str(n,"%02d")+".tif");
+		saveas(F.fig,"figures/"+options.movieName+"/"+num2str(n,"%03d")+".tif");
 	end
 end
 
