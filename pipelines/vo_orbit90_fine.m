@@ -1,7 +1,7 @@
 %% show difference between Ignatovsky and MSM (azimuthal orbit)
 oap = deg2rad(90);
 oaphirange = 0:15:345;
-f = f*cos(oap/2)^2; % convert from effective focal length to parent focal length
+wbeam = f/2/fnum*sec(oap/2)^2; % convert from effective focal length to parent focal length
 Ex = zeros([size(x) length(oaphirange)]);
 Ey = Ex;
 Ez = Ex;
@@ -10,7 +10,6 @@ Eyp = Ex;
 Ezp = Ex;
 for n=1:length(oaphirange)
 	oaphi=deg2rad(oaphirange(n));
-	f = f*cos(oap/2)^2; % convert from effective focal length to parent focal length
 	[x,y,z,xo,yo,zo] = camera(N,zoffset,-oap,oaphi);
 	[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,oap,oaphi);
 	[Ex(:,:,n),Ey(:,:,n),Ez(:,:,n)] = rot(Exo,Eyo,Ezo,oap,oaphi);
