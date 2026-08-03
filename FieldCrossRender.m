@@ -24,9 +24,9 @@ properties (SetAccess = private)
 	figWidth = 10
 	% components of figHeight are:
 	% 1. total figure height in Inches
-	% 2. normalized vertical alignment of main image row
-	% 3. normalized vertical alignment of lineout image row
-	% 4. normalized vertical alignment of altE image row
+	% 2. normalized vertical alignment of first (top) image row
+	% 3. normalized vertical alignment of second image row
+	% 4. normalized vertical alignment of third image row (or lineout plots)
 	% 5. normalized image height
 	% 6. normalized vertical alignment of header colorbar
 	% 7. normalized colorbar height
@@ -39,7 +39,6 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 	arguments
 		x double % observation coordinates (grids)
 		y double
-		%z double % slice position along the beam (scalar constant)
 		Ex double % field components
 		Ey double
 		Ez double
@@ -113,15 +112,15 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, options)
 	elseif F.drawAlt==1 && (F.drawLineout==1 || length(F.altE)>3)
 		if F.drawHeader==0 % no header
 			F.figHeight(1) = 9.6*F.sf;
-			F.figHeight(2) = 0.4;
-			F.figHeight(3) = 0.1;
-			F.figHeight(4) = 0.7;
+			F.figHeight(2) = 0.7;
+			F.figHeight(3) = 0.4;
+			F.figHeight(4) = 0.1;
 			F.figHeight(5) = 0.247;
 		else % header
 			F.figHeight(1) = 10.4*F.sf;
-			F.figHeight(2) = 0.37;
-			F.figHeight(3) = 0.09;
-			F.figHeight(4) = 0.64;
+			F.figHeight(2) = 0.64;
+			F.figHeight(3) = 0.37;
+			F.figHeight(4) = 0.09;
 			F.figHeight(5) = 0.23;
 			F.figHeight(6) = 0.924;
 			F.figHeight(7) = 0.034;
@@ -149,99 +148,146 @@ function F = Render(F, x, y, Ex, Ey, Ez, paramVal, oap, oaphi)
 	xmin = min(xrange); xmax = max(xrange);
 	ymin = min(yrange); ymax = max(yrange);
 
-	% apply global phase offset based on max value of Ex
-	Ex0complex = max(Ex,[],"all");
-	Ex0 = abs(Ex0complex);
-	phsglobal = conj(Ex0complex)/abs(Ex0complex);
+	F = F.drawRow(1,x,y,Ex,Ey,Ez,xrange,yrange);
 
-	% upper left axes: x-component
-	F.axm=axes('position',[.05 F.figHeight(2) .25 F.figHeight(5)]);
-	% render complex phase
-	image([xmin xmax],[ymin ymax],PhaseColor(Ex/Ex0*phsglobal,5));
-	set(F.axm,'YDir','normal'); % image() reverses y-axis coordinates
-	axis square;
-	axis off;
-	% title w/ formatting
-	xdigits = ceil(-log10(Ex0));
-	title('$E_x / E_0$','Interpreter','latex')
-	hold on
+	if F.drawAlt==1 % draw alternative phase plot row
+		F = F.drawRow(2,x,y,...
+			cell2mat(F.altE(1)),cell2mat(F.altE(2)),cell2mat(F.altE(3)),...
+			xrange,yrange);
+	end
+	if F.drawLineout==1 % draw lineout row on bottom
+		F = F.lineout(x,y,Ex,Ey,Ez,xrange,yrange);
+	elseif F.drawAlt==1 && length(F.altE)>3 % if three phase plot rows are requested
+		F = F.drawRow(3,x,y,...
+			cell2mat(F.altE(4)),cell2mat(F.altE(5)),cell2mat(F.altE(6)),...
+			xrange,yrange);
+	end
 
-	% included with the upper left plot is the label reporting our slicing parameter
-	% (z-plane, slicing angle, etc)
+	% header
 	if F.drawHeader==1
 		annotation('textbox',[.05 F.figHeight(6) .1 F.figHeight(7)],...
 			'String',sprintf(F.paramText,paramVal),...
 			'Interpreter','latex','FontSize',20,'EdgeColor','none');
+		F = F.colorbar();
 	else
 		annotation('textbox',[0.048 0.37 0.1 0.1],...
 			'String',sprintf(F.paramText,paramVal),...
 			'Interpreter','latex','FontSize',20,...
 			'EdgeColor','none','Rotation',90);
 	end
-	% cross-section line
+end
+
+function F = drawRow(F, rowNum, x, y, Exp, Eyp, Ezp, xrange, yrange)
+	rowHeight = F.figHeight(rowNum+1);
+	% if plotting the B field, we want to normalize relative to B_y
+	if F.isB && rowNum==2
+		E0complex = max(Eyp,[],"all");
+		phsglobal = conj(E0complex)/abs(E0complex);
+		Ex0 = max(abs(Exp),[],"all");
+		Ey0 = abs(E0complex);
+		Ez0 = max(abs(Ezp),[],"all");
+		xdigits = ceil(-log10(Ex0/Ey0));
+		zdigits = ceil(-log10(Ez0/Ey0));
+	else
+		E0complex = max(Exp,[],"all");
+		phsglobal = conj(E0complex)/abs(E0complex);
+		% TODO: relative phase
+		Ex0 = abs(E0complex);
+		Ey0 = max(abs(Eyp),[],"all");
+		Ez0 = max(abs(Ezp),[],"all");
+		ydigits = ceil(-log10(Ey0/Ex0));
+		zdigits = ceil(-log10(Ez0/Ex0));
+	end
+
+	% min/max values
+	xmin = min(xrange); xmax = max(xrange);
+	ymin = min(yrange); ymax = max(yrange);
+
+	% left axes: x-cross section
+	F.axa=axes('position',[.05 rowHeight .25 F.figHeight(5)]);
+	% render complex phase
+	image([xmin xmax],[ymin ymax],PhaseColor(Exp/Ex0*phsglobal,5));
+	set(F.axa,'YDir','normal'); % image() reverses y-axis coordinates
+	axis square;
+	axis off;
+	hold on
+	% formatted title
+	if F.isB && rowNum==2
+		title(['$c B_x / (' num2str(round(Ex0*10^xdigits)/10^xdigits) ' B_0)$'], ...
+			'Interpreter','latex')
+	else
+		title(['$E_x / E_0$'], 'Interpreter','latex')
+	end
+	% lineout section line
 	if F.drawLineout==1
 		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
 	end
+	% label axes
+	xlabel('$r / f$','Interpreter','latex');
+	F.axa.XTick = [xmin 0 xmax] * 0.8;
+	F.axa.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
+	F.axa.YTick = [ymin 0 ymax] * 0.8;
+	F.axa.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
+	% TODO: not working?
 	hold off
 
-	% upper middle axes: y-component
-	F.aym=axes('position',[.38 F.figHeight(2) .25 F.figHeight(5)]);
+	% middle axes: y-cross section
+	F.aya=axes('position',[.38 rowHeight .25 F.figHeight(5)]);
 	% render complex phase
-	Ey0 = max(abs(Ey),[],"all");
-	image([xmin xmax],[ymin ymax],PhaseColor(Ey/Ey0*phsglobal,5));
-	set(F.aym,'YDir','normal');
+	image([xmin xmax],[ymin ymax],PhaseColor(Eyp/Ey0*phsglobal,5));
+	set(F.aya,'YDir','normal');
 	axis square;
 	axis off;
-	% formatted title
-	ydigits = ceil(-log10(Ey0/Ex0));
-	title(['$E_y / (' num2str(round(Ey0/Ex0*10^ydigits)/10^ydigits) ' E_0)$'], ...
-		'Interpreter','latex')
-	% cross-section line (diagonal on this one)
 	hold on
+	% formatted title
+	if F.isB && rowNum==2
+		title(['$c B_y / B_0$'], 'Interpreter','latex')
+	else
+		title(['$E_y / (' num2str(round(Ey0*10^ydigits)/10^ydigits) ' E_0)$'], ...
+			'Interpreter','latex')
+	end
+	% cross-section line (diagonal on this one)
 	if F.drawLineout==1
 		plot3([-sqrt(xmin^2/2),sqrt(xmax^2/2)],[-sqrt(xmin^2/2),sqrt(xmax^2/2)],[2,2], ...
 			'w--','LineWidth',1);
 	end
+	% label axes
+	xlabel('$r / f$','Interpreter','latex');
+	F.aya.XTick = [xmin 0 xmax] * 0.8;
+	F.aya.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
+	F.aya.YTick = [ymin 0 ymax] * 0.8;
+	F.aya.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
+	% TODO: not working?
 	hold off
 
-	% upper right axes: z-component
-	F.azm=axes('position',[.71 F.figHeight(2) .25 F.figHeight(5)]);
+	% right axes: z-cross section
+	F.aza=axes('position',[.71 rowHeight .25 F.figHeight(5)]);
 	% render complex phase
-	Ez0 = max(abs(Ez),[],"all");
-	image([xmin xmax],[ymin ymax],PhaseColor(Ez/Ez0*phsglobal,5));
-	set(F.azm,'YDir','normal');
+	image([xmin xmax],[ymin ymax],PhaseColor(Ezp/Ez0*phsglobal,5));
+	set(F.aza,'YDir','normal');
 	axis square;
 	axis off;
+	hold on
 	% formatted title
-	zdigits = ceil(-log10(Ez0/Ex0));
-	title(['$E_z / (' num2str(round(Ez0/Ex0*10^zdigits)/10^zdigits) ' E_0)$'], ...
-		'Interpreter','latex')
-	% add secondary label in top right if no lower plots
-	if F.drawLegend==0 && (F.drawLineout==1 || length(F.altE)==0) && strcmp(F.paramText2,"")==0
-		text(xmax,xmax*1.6,F.paramText2,...
-			'Interpreter','latex','FontSize',1.5*F.figWidth,'HorizontalAlignment','right');
+	if F.isB && rowNum==2
+		title(['$c B_z / (' num2str(round(Ez0*10^zdigits)/10^zdigits) ' B_0)$'], ...
+			'Interpreter','latex')
+	else
+		title(['$E_z / (' num2str(round(Ez0*10^zdigits)/10^zdigits) ' E_0)$'], ...
+			'Interpreter','latex')
 	end
 	% cross-section line
-	hold on
 	if F.drawLineout==1
 		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
 	end
+	% label axes
+	xlabel('$r / f$','Interpreter','latex');
+	F.aza.XTick = [xmin 0 xmax] * 0.8;
+	F.aza.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
+	F.aza.YTick = [ymin 0 ymax] * 0.8;
+	F.aza.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
+	% TODO: not working?
 	hold off
-
-	if F.drawLineout==1
-		F = F.lineout(x,y,Ex,Ey,Ez,xrange,yrange);
-	end
-	if F.drawAlt==1
-		F = F.altPlots(x,y,...
-			cell2mat(F.altE(1)),cell2mat(F.altE(2)),cell2mat(F.altE(3)),...
-			xrange,yrange);
-	end
-	% TODO: lineout=false,alt=true,altE>3 --> draw bottom row
-
-	% top colorbar
-	if F.drawHeader==1
-		F = F.colorbar();
-	end
 end
 
 function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange)
@@ -282,15 +328,15 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange)
 	end
 
 	% left axes: x-cross section
-	F.axl=axes('position',[.05 F.figHeight(3) .25 F.figHeight(5)]);
+	F.axl=axes('position',[.05 F.figHeight(4) .25 F.figHeight(5)]);
 	hold on
-	if length(F.altE)>3
-		plot(xrange,abs(Exsf)/Exs0,'--','Color',[49,54,143]/255,'LineWidth',1.0);
-	end
 	if length(F.altE)>0
 		plot(xrange,abs(Exaf)/Exa0,'Color',[200,0,0]/255,'LineWidth',1.5);
 	end
 	plot(xrange,abs(Exf)/Ex0,'Color',[49,54,143]/255,'LineWidth',1.5);
+	if length(F.altE)>3
+		plot(xrange,abs(Exsf)/Exs0,'--','Color',[49,54,143]/255,'LineWidth',1.0);
+	end
 	hold off
 	set(F.axl,'YDir','normal');
 	% label axes
@@ -307,26 +353,26 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange)
 	% include a legend box in the upper-right corner of the figure
 	if F.drawLegend==1
 		legendList={'MSM'};
+		if length(F.altE)>3
+			legendList=[legendList {'Singh'}];
+		end
 		if length(F.altE)>0
 			legendList=[{'Ignatovsky'} legendList];
-		end
-		if length(F.altE)>3
-			legendList=[{'Singh'} legendList];
 		end
 		la=legend(legendList,'Location','southwest','Direction','reverse');
 		set(la, 'Position',[0.79 F.figHeight(6) .1 .05]);
 	end
 
 	% middle axes: y-cross section
-	F.ayl=axes('position',[.38 F.figHeight(3) .25 F.figHeight(5)]);
+	F.ayl=axes('position',[.38 F.figHeight(4) .25 F.figHeight(5)]);
 	hold on
-	if length(F.altE)>3
-		plot(xrange,abs(Eysf)/Eys0,'--','Color',[49,54,143]/255,'LineWidth',1.0);
-	end
 	if length(F.altE)>0
 		plot(xrange,abs(Eyaf)/Eya0,'Color',[200,0,0]/255,'LineWidth',1.5);
 	end
 	plot(xrange,abs(Eyf)/Ey0,'Color',[49,54,143]/255,'LineWidth',1.5);
+	if length(F.altE)>3
+		plot(xrange,abs(Eysf)/Eys0,'--','Color',[49,54,143]/255,'LineWidth',1.0);
+	end
 	hold off
 	set(F.ayl,'YDir','normal');
 	% label axes
@@ -344,15 +390,15 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange)
 		' E_0)$'], 'Interpreter','latex')
 
 	% right axes: z-cross section
-	F.azl=axes('position',[.71 F.figHeight(3) .25 F.figHeight(5)]);
+	F.azl=axes('position',[.71 F.figHeight(4) .25 F.figHeight(5)]);
 	hold on
-	if length(F.altE)>3
-		plot(xrange,abs(Ezsf)/Ezs0,'--','Color',[49,54,143]/255,'LineWidth',1.0);
-	end
 	if length(F.altE)>0
 		plot(xrange,abs(Ezaf)/Eza0,'Color',[200,0,0]/255,'LineWidth',1.5);
 	end
 	plot(xrange,abs(Ezf)/Ez0,'Color',[49,54,143]/255,'LineWidth',1.5);
+	if length(F.altE)>3
+		plot(xrange,abs(Ezsf)/Ezs0,'--','Color',[49,54,143]/255,'LineWidth',1.0);
+	end
 	hold off
 	set(F.azl,'YDir','normal');
 	% label axes
@@ -368,99 +414,6 @@ function F = lineout(F,x,y,Ex,Ey,Ez,xrange,yrange)
 	title(['$\left| E_z \right| / (' ...
 		num2str(round(Ez0/Ex0*10^zdigits)/10^zdigits) ...
 		' E_0)$'], 'Interpreter','latex')
-end
-
-function F = altPlots(F, x, y, Exp, Eyp, Ezp, xrange, yrange)
-	% min/max values
-	xmin = min(xrange); xmax = max(xrange);
-	ymin = min(yrange); ymax = max(yrange);
-	% if plotting the B field, we want to normalize relative to B_y
-	if F.isB
-		E0complex = max(Eyp,[],"all");
-		phsglobal = conj(E0complex)/abs(E0complex);
-		Ex0 = max(abs(Exp),[],"all");
-		Ey0 = abs(E0complex);
-		Ez0 = max(abs(Ezp),[],"all");
-		xdigits = ceil(-log10(Ex0/Ey0));
-		zdigits = ceil(-log10(Ez0/Ey0));
-	else
-		E0complex = max(Exp,[],"all");
-		phsglobal = conj(E0complex)/abs(E0complex);
-		Ex0 = abs(E0complex);
-		Ey0 = max(abs(Eyp),[],"all");
-		Ez0 = max(abs(Ezp),[],"all");
-		ydigits = ceil(-log10(Ey0/Ex0));
-		zdigits = ceil(-log10(Ez0/Ex0));
-	end
-	% left axes: x-cross section
-	F.axa=axes('position',[.05 F.figHeight(4) .25 F.figHeight(5)]);
-	% render complex phase
-	image([xmin xmax],[ymin ymax],PhaseColor(Exp/Ex0*phsglobal,5));
-	set(F.axa,'YDir','normal'); % image() reverses y-axis coordinates
-	% label axes
-	xlabel('$r / f$','Interpreter','latex');
-	F.axa.XTick = [xmin 0 xmax] * 0.8;
-	F.axa.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
-	F.axa.YTick = [ymin 0 ymax] * 0.8;
-	F.axa.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
-	axis square;
-	axis off;
-	% title w/ formatting
-	if F.isB
-		title(['$c B_x / (' num2str(round(Ex0*10^xdigits)/10^xdigits) ' B_0)$'], ...
-			'Interpreter','latex')
-	else
-		title(['$E_x / E_0$'], ...
-			'Interpreter','latex')
-		hold on
-		text(xmin,-ymin*1.3,F.paramText2, ...
-			'Interpreter','latex','FontSize',14);
-		hold off
-	end
-
-	% middle axes: y-cross section
-	F.aya=axes('position',[.38 F.figHeight(4) .25 F.figHeight(5)]);
-	% render complex phase
-	image([xmin xmax],[ymin ymax],PhaseColor(Eyp/Ey0*phsglobal,5));
-	set(F.aya,'YDir','normal');
-	% label axes
-	xlabel('$r / f$','Interpreter','latex');
-	F.aya.XTick = [xmin 0 xmax] * 0.8;
-	F.aya.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
-	F.aya.YTick = [ymin 0 ymax] * 0.8;
-	F.aya.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
-	axis square;
-	axis off;
-	% formatted title
-	if F.isB
-		title(['$c B_y / B_0$'], ...
-			'Interpreter','latex')
-	else
-		title(['$E_y / (' num2str(round(Ey0*10^ydigits)/10^ydigits) ' E_0)$'], ...
-			'Interpreter','latex')
-	end
-
-	% right axes: z-cross section
-	F.aza=axes('position',[.71 F.figHeight(4) .25 F.figHeight(5)]);
-	% render complex phase
-	image([xmin xmax],[ymin ymax],PhaseColor(Ezp/Ez0*phsglobal,5));
-	set(F.aza,'YDir','normal');
-	% label axes
-	xlabel('$r / f$','Interpreter','latex');
-	F.aza.XTick = [xmin 0 xmax] * 0.8;
-	F.aza.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
-	F.aza.YTick = [ymin 0 ymax] * 0.8;
-	F.aza.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
-	axis square;
-	axis off;
-	% formatted title
-	if F.isB
-		title(['$c B_z / (' num2str(round(Ez0*10^zdigits)/10^zdigits) ' B_0)$'], ...
-			'Interpreter','latex')
-	else
-		title(['$E_z / (' num2str(round(Ez0*10^zdigits)/10^zdigits) ' E_0)$'], ...
-			'Interpreter','latex')
-	end
 end
 
 function F = colorbar(F)
