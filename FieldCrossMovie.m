@@ -1,57 +1,66 @@
 %% show result w/ diagnostic plots
-function F = FieldCrossMovie(x, y, Exr, Eyr, Ezr, paramVals, options)
-arguments
+function F = FieldCrossMovie(x, y, Exr, Eyr, Ezr, rowLabel, options)
+arguments (Repeating)
 	x double % observation coordinates (grids)
 	y double
 	Exr double % field components
 	Eyr double
 	Ezr double
-	paramVals double % independent variable varying between frames
+	rowLabel string % name of field
+end
+	arguments
 	% name-value arguments
-	options.renderParams cell = {'drawLegend',false};
-	options.altE cell = {}
+	options.paramVals double % independent variable varying between frames
+	options.renderParams cell = {'drawLegend',false };
 	options.live logical = false % use arrow keys to interact?
 	options.windowName string
 	options.movieName string
 end
 
+% extract one layer from a 3D array
 function eout = varlengthslice(e,n)
-	if size(e,3)>1
+	if isnumeric(e) && size(e,3)>1
 		eout = e(:,:,n);
 	else
-		eout = e(:,:);
+		eout = e;
 	end
 end
-altEslice = @(altE,n) cellfun(@(e) varlengthslice(e,n),...
-	altE,'UniformOutput',false);
+% extract one layer from each 3D array in a repeating-argument list
+Eslice = @(E,n) cellfun(@(e) varlengthslice(e,n), E,'UniformOutput',false);
+% extract one layer from a list of repeating-argument lists
+Elistslice = @(E,n) cellfun(@(e) Eslice(e,n), E,'UniformOutput',false);
 
-if isfield(options,'altE')
-	F = FieldCrossRender(x, y, Exr(:,:,1),Eyr(:,:,1),Ezr(:,:,1),...
-		options.renderParams{:},'altE',altEslice(options.altE,1));
-else
-	F = FieldCrossRender(x, y, Exr(:,:,1),Eyr(:,:,1),Ezr(:,:,1),...
-		options.renderParams{:});
-end
+% extract first entry from each repeating argument list
+inParams = vertcat(x,y,Exr,Eyr,Ezr,rowLabel);
+repeatingParams = Eslice(inParams,1);
+% initialize FieldCrossRender with first entries
+F = FieldCrossRender(repeatingParams{:}, options.renderParams{:});
+
 if isfield(options,'windowName')
 	F.fig.Name = sprintf(options.windowName+" [%d]",paramVals(n),1);
+end
+if isfield(options,'paramVals')
+	paramVals = options.paramVals;
+else
+	paramVals = zeros(length(x{1}));
 end
 
 % interactive: use arrow keys to switch between frames
 if isfield(options,'live') && options.live
 	F.fig.UserData = 1;
-	F.fig.KeyReleaseFcn = {@slide,paramVals,F,x,y,Exr,Eyr,Ezr};
+	F.fig.KeyReleaseFcn = {@slide,paramVals,F,x,y,Exr,Eyr,Ezr,rowLabel};
 % non-interactive: print series to video file
 else
 	mkdir("figures/"+options.movieName)
 	for n = 1:length(paramVals)
 		fprintf("n=%d\n",n);
-		F.altE = altEslice(options.altE,n);
-		F.Render(x, y, Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n),paramVals(:,n),paramVals(1,n),paramVals(2,n));
+		repeatingParams = Elistslice({x,y,Exr,Eyr,Ezr,rowLabel},n)
+		F.Render(repeatingParams{:},paramVals(:,n));%,paramVals(1,n),paramVals(2,n));
 		saveas(F.fig,"figures/"+options.movieName+"/"+num2str(n,"%03d")+".tif");
 	end
 end
 
-function slide(src,event,paramVals,F,x,y,Exr,Eyr,Ezr)
+function slide(src,event,paramVals,F,x,y,Exr,Eyr,Ezr,rowLabel)
 	n = src.UserData;
 	switch event.Key
 		case {'leftarrow','uparrow','k'}
@@ -70,8 +79,8 @@ function slide(src,event,paramVals,F,x,y,Exr,Eyr,Ezr)
 			return;
 	end
 	fprintf("n=%d\n",n);
-	F.altE = altEslice(options.altE,n);
-	F.Render(x, y, Exr(:,:,n),Eyr(:,:,n),Ezr(:,:,n),paramVals(:,n));
+	repeatingParams = Elistslice({x,y,Exr,Eyr,Ezr,rowLabel},n);
+	F.Render(repeatingParams{:},paramVals(:,n));%,paramVals(1,n),paramVals(2,n));
 	F.fig.Name = "theta="+string(paramVals(n))+" ["+string(n)+"]";
 	src.UserData = n;
 end
