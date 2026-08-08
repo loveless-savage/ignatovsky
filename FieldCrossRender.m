@@ -29,9 +29,11 @@ end
 
 methods
 function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
-	arguments (Repeating)
+	arguments
 		x double % observation coordinates (grids)
 		y double
+	end
+	arguments (Repeating)
 		Ex double % field components
 		Ey double
 		Ez double
@@ -75,7 +77,7 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 		F.drawLegend = options.drawLegend;
 	end
 
-	numRows = max(length(x)*F.drawAll,1);
+	numRows = max(length(Ex)*F.drawAll,1);
 	switch (numRows+F.drawLineout)
 		% figure heights for 1 plot row
 		case 1
@@ -117,19 +119,19 @@ function F = Render(F, x, y, Ex, Ey, Ez, rowLabel, paramVal, oap, oaphi)
 	% how many phase plots should we draw?
 	if F.drawAll==1
 		% draw as many as 3 rows -- or 2, if also drawing a lineout
-		rowRange = 1:min(length(x),3-F.drawLineout);
+		rowRange = 1:min(length(Ex),3-F.drawLineout);
 	else
 		% if !F.drawAll, just draw 1 row
 		rowRange = 1:1;
 	end
 	% draw phase plots
 	for k=rowRange
-		F = F.drawRow(k,x{k},y{k},Ex{k},Ey{k},Ez{k},rowLabel{k});
+		F = F.drawRow(k,x,y,Ex{k},Ey{k},Ez{k},rowLabel{k});
 	end
 	% draw lineout if requested
 	if F.drawLineout==1 % draw lineout row on bottom
-		xrange = x{1}(1,:);
-		yrange = y{1}(:,1)';
+		xrange = x(1,:);
+		yrange = y(:,1)';
 		F = F.lineout(x,y,Ex,Ey,Ez,rowLabel,xrange,yrange);
 	end
 
@@ -278,10 +280,10 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	% interpolate string of points from each matrix to get cross sections
 	xmin = min(xrange); xmax = max(xrange);
 	ymin = min(yrange); ymax = max(yrange);
-	for k=1:min(length(x),3)
-		Exf{k} = interp2(x{k},y{k},Ex{k},xrange,0*yrange);
-		Eyf{k} = interp2(x{k},y{k},Ey{k},sqrt(0.5)*xrange,sqrt(0.5)*yrange);
-		Ezf{k} = interp2(x{k},y{k},Ez{k},xrange,0*yrange);
+	for k=1:min(length(Ex),3)
+		Exf{k} = interp2(x,y,Ex{k},xrange,0*yrange);
+		Eyf{k} = interp2(x,y,Ey{k},sqrt(0.5)*xrange,sqrt(0.5)*yrange);
+		Ezf{k} = interp2(x,y,Ez{k},xrange,0*yrange);
 		% normalize each row relative to the x component
 		Ex0 = max(abs(Ex{k}),[],"all");
 		Exf{k} = abs(Exf{k})/Ex0;
@@ -295,7 +297,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	% left axes: x-cross section
 	F.ax{end+1}=axes('position',[.08 F.figHeight(4) .25 F.figHeight(5)]);
 	hold on
-	for k=1:min(length(x),3)
+	for k=1:min(length(Ex),3)
 		plot(xrange,Exf{k},stls{k},'Color',clrs{k},'LineWidth',1.5,'DisplayName',label{k});
 	end
 	hold off
@@ -320,7 +322,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	% middle axes: y-cross section
 	F.ay{end+1}=axes('position',[.38 F.figHeight(4) .25 F.figHeight(5)]);
 	hold on
-	for k=1:min(length(x),3)
+	for k=1:min(length(Ex),3)
 		plot(xrange,Eyf{k},stls{k},'Color',clrs{k},'LineWidth',1.5);
 	end
 	hold off
@@ -342,7 +344,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	% right axes: z-cross section
 	F.az{end+1}=axes('position',[.68 F.figHeight(4) .25 F.figHeight(5)]);
 	hold on
-	for k=1:min(length(x),3)
+	for k=1:min(length(Ex),3)
 		plot(xrange,Ezf{k},stls{k},'Color',clrs{k},'LineWidth',1.5);
 	end
 	hold off
