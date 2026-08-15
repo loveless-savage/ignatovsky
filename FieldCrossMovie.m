@@ -32,20 +32,20 @@ Eslice = @(E,n) cellfun(@(e) varlengthslice(e,n), E,'UniformOutput',false);
 % extract one layer from a list of repeating-argument lists
 Elistslice = @(E,n) cellfun(@(e) Eslice(e,n), E,'UniformOutput',false);
 
+if isfield(options,'paramVals')
+	paramVals = options.paramVals;
+else
+	paramVals = zeros(1,size(Ex,3));
+end
 % extract first entry from each repeating argument list
 inParams = vertcat(Exr,Eyr,Ezr,rowLabel);
 repeatingParams = Eslice(inParams,1);
 % initialize FieldCrossRender with first entries
 F = FieldCrossRender(varlengthslice(x,1),varlengthslice(y,1),...
-	repeatingParams{:}, options.renderParams{:});
+	repeatingParams{:}, options.renderParams{:}, paramVal=paramVals(:,1));
 
 if isfield(options,'windowName')
-	F.fig.Name = sprintf(options.windowName+" [%d]",paramVals(n),1);
-end
-if isfield(options,'paramVals')
-	paramVals = options.paramVals;
-else
-	paramVals = zeros(length(x{1}));
+	F.fig.Name = sprintf(options.windowName+" [%d]",paramVals(1,n),1);
 end
 
 % interactive: use arrow keys to switch between frames

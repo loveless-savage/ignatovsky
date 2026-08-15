@@ -45,6 +45,7 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 		options.figY double = 4.0
 		options.figWidth double = 10
 		options.paramText string = ''
+		options.paramVal double = 0
 		options.drawLineout logical = true
 		options.drawAll logical = true
 		options.isB logical = false
@@ -107,10 +108,10 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 	F.fig.InvertHardcopy = 'off';
 	F.fig.Color = 'white';
 
-	F = F.Render(x, y, Ex, Ey, Ez, rowLabel, 0);
+	F = F.Render(x, y, Ex, Ey, Ez, rowLabel, options.paramVal);
 end
 
-function F = Render(F, x, y, Ex, Ey, Ez, rowLabel, paramVal, oap, oaphi)
+function F = Render(F, x, y, Ex, Ey, Ez, rowLabel, paramVal)
 	% scale label text with figure size
 	set(0,'DefaultAxesFontSize',16);
 	fontsize(scale=F.sf);

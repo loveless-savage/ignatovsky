@@ -10,5 +10,5 @@ wbeam = f/2/fnum*sec(oap/2)^2; % convert from effective focal length to parent f
 [Exp,Eyp,Ezp] = Soap(x,y,z,oap,oaphi);
 [Exs,Eys,Ezs] = Singh(x,y,z);
 
-FieldCrossRender(x,y,Ex,Ey,Ez,'Ignatovsky',x,y,Exp,Eyp,Ezp,'MSM',x,y,Exs,Eys,Ezs,'Singh',...
+FieldCrossRender(x,y,Ex,Ey,Ez,'Ignatovsky',Exp,Eyp,Ezp,'MSM',Exs,Eys,Ezs,'Singh',...
 	paramText='$\\theta=90^\\circ,\\ \\phi=0^\\circ$',drawLegend=true,figX=0.5);
