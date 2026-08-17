@@ -203,13 +203,6 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	if F.drawLineout==1
 		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
 	end
-	% label axes
-	xlabel('$r / f$','Interpreter','latex');
-	F.ax{rowNum}.XTick = [xmin 0 xmax] * 0.8;
-	F.ax{rowNum}.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
-	F.ax{rowNum}.YTick = [ymin 0 ymax] * 0.8;
-	F.ax{rowNum}.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
-	% TODO: not working?
 	hold off
 
 	% middle axes: y-cross section
@@ -232,13 +225,6 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 		plot3([-sqrt(xmin^2/2),sqrt(xmax^2/2)],[-sqrt(xmin^2/2),sqrt(xmax^2/2)],[2,2], ...
 			'w--','LineWidth',1);
 	end
-	% label axes
-	xlabel('$r / f$','Interpreter','latex');
-	F.ay{rowNum}.XTick = [xmin 0 xmax] * 0.8;
-	F.ay{rowNum}.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
-	F.ay{rowNum}.YTick = [ymin 0 ymax] * 0.8;
-	F.ay{rowNum}.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
-	% TODO: not working?
 	hold off
 
 	% right axes: z-cross section
@@ -247,7 +233,7 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	image([xmin xmax],[ymin ymax],PhaseColor(Ez/Ez0*phsglobal,5));
 	set(F.az{rowNum},'YDir','normal');
 	axis square;
-	axis off;
+	%axis off;
 	hold on
 	% formatted title
 	if F.isB && rowNum==2
@@ -262,12 +248,11 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
 	end
 	% label axes
-	xlabel('$r / f$','Interpreter','latex');
-	F.az{rowNum}.XTick = [xmin 0 xmax] * 0.8;
-	F.az{rowNum}.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
+	%ylabel('$r / \lambda$','Interpreter','latex');
+	set(F.az{rowNum},'YAxisLocation','right','TickLabelInterpreter','latex');
+	F.az{rowNum}.XTick = [];
 	F.az{rowNum}.YTick = [ymin 0 ymax] * 0.8;
-	F.az{rowNum}.YTickLabel = {sprintf('%3.1f',ymin*0.8) '0' sprintf('%3.1f',ymax*0.8)};
-	% TODO: not working?
+	F.az{rowNum}.YTickLabel = {sprintf('%3.1f',ymin*0.8) '$\ r / \lambda$' sprintf('%3.1f',ymax*0.8)};
 	hold off
 
 	% side label
@@ -302,7 +287,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 		plot(xrange,Exf{k},stls{k},'Color',clrs{k},'LineWidth',1.5,'DisplayName',label{k});
 	end
 	hold off
-	set(F.ax{end},'YDir','normal');
+	set(F.ax{end},'YDir','normal','TickLabelInterpreter','latex');
 	% label axes
 	xlabel('$r / \lambda$','Interpreter','latex');
 	xlim([xmin xmax]);
@@ -327,7 +312,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 		plot(xrange,Eyf{k},stls{k},'Color',clrs{k},'LineWidth',1.5);
 	end
 	hold off
-	set(F.ay{end},'YDir','normal');
+	set(F.ay{end},'YDir','normal','TickLabelInterpreter','latex');
 	% label axes
 	xlabel('$r / \lambda$','Interpreter','latex');
 	xlim([xmin xmax]);
@@ -349,7 +334,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 		plot(xrange,Ezf{k},stls{k},'Color',clrs{k},'LineWidth',1.5);
 	end
 	hold off
-	set(F.az{end},'YDir','normal');
+	set(F.az{end},'YDir','normal','TickLabelInterpreter','latex');
 	% label axes
 	xlabel('$r / \lambda$','Interpreter','latex');
 	xlim([xmin xmax]);
@@ -373,13 +358,13 @@ function F = colorbar(F)
 	amplitude = 0:0.02:1;
 	[P,A] = meshgrid(phase,amplitude);
 	image([0 2*pi],[0 1],PhaseColor(A.*exp(1i*P),5));
-	set(acb,'YDir','normal','XAxisLocation','top');
+	set(acb,'YDir','normal','XAxisLocation','top','TickLabelInterpreter','latex');
 	% label axes
 	xlabel('phase');
 	ylabel('amp.');
 	% add range labels to axes
 	acb.XTick = [0 pi 2*pi];
-	acb.XTickLabel = {'0','\pi','2\pi'};
+	acb.XTickLabel = {'0','$\pi$','$2\pi$'};
 	acb.YTick = [-1 0 1];
 	% reposition x-axis label
 	xlabh = get(acb,'XLabel');
