@@ -3,10 +3,10 @@ classdef FieldCrossRender
 % FieldCrossRender TODO: help text
 properties
 	fig % figure itself
-	paramText = "$z = %3.2f \\lambda$"; % left corner text
 	drawLineout = true; % whether to include 2D lower row
 	drawAll = true; % only draw the primary phase plot when false
 	isB = false; % change label formatting when rendering E and B
+	drawMirror = false; % are we adding mirror decorations to the top plot?
 	drawHeader = true;
 	drawLegend = false;
 end
@@ -25,6 +25,9 @@ properties (SetAccess = private)
 	% 7. normalized colorbar height
 	figHeight = [7.2 0.49 0.09 0.09 0.33 0.89 0.05];
 	sf = 1 % scaling factor, comparing to width 10"
+	paramText = "$z = %3.2f \\lambda$"; % left corner text
+	paramVal = 0; % value to substitute into paramText
+	mirrorRimfscale = 1.35; % how far outside theta=90 are we showing on a mirror surface?
 end
 
 methods
@@ -45,10 +48,11 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 		options.figY double = 4.0
 		options.figWidth double = 10
 		options.paramText string = ''
-		options.paramVal double = 0
+		options.paramVal double
 		options.drawLineout logical = true
 		options.drawAll logical = true
 		options.isB logical = false
+		options.mirrorRimfscale double
 		options.drawHeader logical = true
 		options.drawLegend logical = false
 	end
@@ -62,6 +66,9 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 	if isfield(options,'paramText')
 		F.paramText = options.paramText;
 	end
+	if isfield(options,'paramVal')
+		F.paramVal = options.paramVal;
+	end
 	if isfield(options,'drawLineout')
 		F.drawLineout = options.drawLineout;
 	end
@@ -70,6 +77,10 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 	end
 	if isfield(options,'isB')
 		F.isB = options.isB;
+	end
+	if isfield(options,'mirrorRimfscale')
+		F.drawMirror = true;
+		F.mirrorRimfscale = options.mirrorRimfscale;
 	end
 	if isfield(options,'drawHeader')
 		F.drawHeader = options.drawHeader;
@@ -108,7 +119,7 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 	F.fig.InvertHardcopy = 'off';
 	F.fig.Color = 'white';
 
-	F = F.Render(x, y, Ex, Ey, Ez, rowLabel, options.paramVal);
+	F = F.Render(x, y, Ex, Ey, Ez, rowLabel, F.paramVal);
 end
 
 function F = Render(F, x, y, Ex, Ey, Ez, rowLabel, paramVal)
@@ -116,6 +127,7 @@ function F = Render(F, x, y, Ex, Ey, Ez, rowLabel, paramVal)
 	set(0,'DefaultAxesFontSize',16);
 	fontsize(scale=F.sf);
 	clf(F.fig);
+	F.paramVal = paramVal;
 
 	% how many phase plots should we draw?
 	if F.drawAll==1
@@ -157,8 +169,20 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	xrange = x(1,:);
 	yrange = y(:,1)';
 	% min/max values
-	xmin = min(xrange); xmax = max(xrange);
-	ymin = min(yrange); ymax = max(yrange);
+	if F.drawMirror==1 && rowNum==1 % zoom out if drawing full mirror surface (top row only)
+		xmax = 2*F.mirrorRimfscale;
+		xmin = -xmax; ymin = xmin; ymax = xmax;
+		if length(F.paramVal)<2
+			oap = F.paramVal;
+			oaphi = 0;
+		else
+			oap = F.paramVal(1);
+			oaphi = F.paramVal(2);
+		end
+	else
+		xmin = min(xrange); xmax = max(xrange);
+		ymin = min(yrange); ymax = max(yrange);
+	end
 
 	% if plotting the B field, we want to normalize relative to B_y
 	if F.isB && rowNum==2
@@ -180,10 +204,6 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 		zdigits = ceil(-log10(Ez0/Ex0));
 	end
 
-	% min/max values
-	xmin = min(xrange); xmax = max(xrange);
-	ymin = min(yrange); ymax = max(yrange);
-
 	% left axes: x-cross section
 	F.ax{rowNum}=axes('position',[.08 rowHeight .25 F.figHeight(5)]);
 	% render complex phase
@@ -192,6 +212,10 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	axis square;
 	axis off;
 	hold on
+	% if drawing mirror surface (top row only)
+	if F.drawMirror==1 && rowNum==1
+		mirrorDecorations(oap,oaphi);
+	end
 	% formatted title
 	if F.isB && rowNum==2
 		title(['$c B_x / (' num2str(round(Ex0*10^xdigits)/10^xdigits) ' B_0)$'], ...
@@ -213,13 +237,17 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	axis square;
 	axis off;
 	hold on
+	% if drawing mirror surface (top row only)
+	if F.drawMirror==1 && rowNum==1
+		mirrorDecorations(oap,oaphi);
+	end
 	% formatted title
 	if F.isB && rowNum==2
 		title(['$c B_y / B_0$'], 'Interpreter','latex')
 	else
 		title(['$E_y / (' num2str(round(Ey0*10^ydigits)/10^ydigits) ' E_0)$'], ...
 			'Interpreter','latex')
-	end
+	end % TODO: correct scaling factor?
 	% cross-section line (diagonal on this one)
 	if F.drawLineout==1
 		plot3([-sqrt(xmin^2/2),sqrt(xmax^2/2)],[-sqrt(xmin^2/2),sqrt(xmax^2/2)],[2,2], ...
@@ -235,6 +263,10 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	axis square;
 	%axis off;
 	hold on
+	% if drawing mirror surface (top row only)
+	if F.drawMirror==1 && rowNum==1
+		mirrorDecorations(oap,oaphi);
+	end
 	% formatted title
 	if F.isB && rowNum==2
 		title(['$c B_z / (' num2str(round(Ez0*10^zdigits)/10^zdigits) ' B_0)$'], ...
@@ -252,7 +284,12 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	set(F.az{rowNum},'YAxisLocation','right','TickLabelInterpreter','latex');
 	F.az{rowNum}.XTick = [];
 	F.az{rowNum}.YTick = [ymin 0 ymax] * 0.8;
-	F.az{rowNum}.YTickLabel = {sprintf('%3.1f',ymin*0.8) '$\ r / \lambda$' sprintf('%3.1f',ymax*0.8)};
+	sideLabelText = '$\ \rho / \lambda$';
+	if F.drawMirror==1 && rowNum==1
+		sideLabelText = '$\ r / f$';
+	end
+	F.az{rowNum}.YTickLabel = ...
+		{sprintf('%3.1f',ymin*0.8) sideLabelText sprintf('%3.1f',ymax*0.8)};
 	hold off
 
 	% side label
@@ -374,14 +411,24 @@ end
 end % methods
 end % classdef
 
-function mirrorDecorations()
-	global f fnum oap oaphi;
-	wbeam = f/2/fnum*sec(oap/2)^2;
-	x0 = 2*f*tand(oap/2)*cosd(oaphi);
-	y0 = 2*f*tand(oap/2)*sind(oaphi);
-	circleq = 0:0.01:6.28;
+function mirrorDecorations(oap,oaphi)
+	global f fnum;
+	circleq = 0:0.01:6.3;
+	% draw traces on mirror surface
+	wtrace=2*tan([pi/8,pi/4]);
+	tracex=cos(circleq')*wtrace;
+	tracey=sin(circleq')*wtrace;
+	rtrace=2*[-1;1];
+	rtracex=rtrace*cos((0:3)*pi/4);
+	rtracey=rtrace*sin((0:3)*pi/4);
+	hold on
+	plot(tracex,tracey,rtracex,rtracey,'Color',[0.1 0.2 0.9],'LineWidth',2)
+
+	% trace beam envelope incident on mirror
+	wbeam = 0.5/fnum*secd(oap/2)^2;
+	x0 = 2*tand(oap/2)*cosd(oaphi);
+	y0 = 2*tand(oap/2)*sind(oaphi);
 	circlex = wbeam*cos(circleq) + x0;
 	circley = wbeam*sin(circleq) + y0;
-	plot(circlex,circley,'w','LineWidth',2);
-	% TODO: mirror bullseye
+	plot(circlex,circley,'cyan','LineWidth',3);
 end

@@ -55,9 +55,9 @@ function mirror3D(fnum, oap, azi, fig)
 	xincident = x0 + wbeam*cos(pincident); yincident = y0 + wbeam*sin(pincident);
 	zincident(:,1) = (xincident(:,1).^2 + yincident(:,1).^2)/4/f - f;
 	surf(xincident,yincident,zincident,'EdgeColor','none','FaceColor','magenta','FaceAlpha',0.2)
-	% green rim highlighting reflection site
+	% cyan rim highlighting reflection site
 	plot3(xincident(:,1),yincident(:,1),zincident(:,1),'-c','LineWidth',3*sf);
-	% green dot showing where center of incident beam strikes mirror;
+	% cyan dot showing where center of incident beam strikes mirror;
 	% it must be projected forward so it doesn't get hidden by the beam cone
 	hologram0 = [x0 y0 z0-0.05] + mycampos/mycampos(3)*(2*f/fnum-z0);
 	scatter3(hologram0(1),hologram0(2),hologram0(3),30*sf,'cyan','filled');

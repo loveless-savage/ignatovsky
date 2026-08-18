@@ -1,0 +1,36 @@
+oaprange = [0 10 30 90];
+oaphirange = [0 0 0 0];
+%oaprange   = [ 0  1  2  3  4  5  6  8 10 12 15 18 22 26 30 35 40 45 50 55 60 65 70 75 79 82 85 87 88 89 90 ...
+%		      90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 ...
+%			  90 89 87 85 82 79 75 70 65 60 55 50 45 40 35 30 26 22 18 15 13 11 10 ...
+%			  10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 ...
+%		       9  8  7  5  3  2  1];
+%oaphirange = [ 0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0 ...
+%			   1  2  3  5  7  9 12 15 18 22 26 30 35 40 45 50 55 60 65 70 75 79 82 85 87 88 89 90 ...
+%		      90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 ...
+%			  89 87 84 80 75 70 65 60 55 50 45 40 35 30 25 20 15 10  6  3  1  0 ...
+%			   0  0  0  0  0  0  0];
+[xi,yi] = mirror(N,0,0,3*f);
+Env = (xi.^2+yi.^2 <= 9*f^2);
+[pex,pey,pez] = pvec(xi,yi,Env);
+pmx = zeros([size(pex) length(oaprange)]);
+pmy = pmx;
+pmz = pmx;
+pox = pmx;
+poy = pmx;
+poz = pmx;
+for n=1:length(oaprange)
+	oap=deg2rad(oaprange(n));
+	oaphi=deg2rad(oaphirange(n));
+	[xi,yi,Env] = mirror(N,oap,oaphi);
+	[pmx(:,:,n),pmy(:,:,n),pmz(:,:,n)] = pvec(xi,yi,Env);
+	[pox(:,:,n),poy(:,:,n),poz(:,:,n)] = rot(pmx(:,:,n),pmy(:,:,n),pmz(:,:,n),oap,oaphi);
+end
+[xi,yi] = mirror(N,0,0);
+params={'figX',0,'figY',3.9,'drawLineout',false,'mirrorRimfscale',1.5,...
+	'paramText',"$\\theta=%d^\\circ,\\,\\phi=%d^\\circ$"};
+	%'paramText',"$\\theta=%d^\\circ,\\,\\phi=%d^\\circ$");
+%[xi,yi] = mirror(N,0,0,3*f);
+FieldCrossMovie(xi,yi,pex,pey,pez,'Mirror',pmx,pmy,pmz,'$p_{E(m)}$',pox,poy,poz,'$p_{E(b)}$',...
+	paramVals=[oaprange;oaphirange],...
+	movieName="pvec_framecomp_tour",live=true,renderParams=params)
