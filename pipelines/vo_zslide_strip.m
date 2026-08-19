@@ -25,6 +25,6 @@ for n=1:length(zrange)
 	n
 end
 params = {'paramText','$\\z=%d\\lambda$',...
-		  'drawHeader',true,'drawLineout',true,'drawLegend',true,'figX',0.5};
+		  'drawHeader',true,'drawLineout',true,'drawLegend',true,'relativePhase',true,'figX',0.5};
 FieldCrossMovie(x,y,Ex,Ey,Ez,'Ignatovsky',Exp,Eyp,Ezp,'MSM',Exs,Eys,Ezs,'Singh',...
 	paramVals=zrange, renderParams=params, live=true, movieName="vo_zslide_strip");

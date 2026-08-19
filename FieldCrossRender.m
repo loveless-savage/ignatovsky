@@ -9,6 +9,7 @@ properties
 	drawMirror = false; % are we adding mirror decorations to the top plot?
 	drawHeader = true;
 	drawLegend = false;
+	relativePhase = false; % whether to compensate for phase changes in x
 end
 properties (SetAccess = private)
 	ax = {} % plots
@@ -55,6 +56,7 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 		options.mirrorRimfscale double
 		options.drawHeader logical = true
 		options.drawLegend logical = false
+		options.relativePhase logical = false
 	end
 
 	if isfield(options,'figWidth')
@@ -87,6 +89,9 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 	end
 	if F.drawLineout==1 && F.drawHeader==1 && isfield(options,'drawLegend')
 		F.drawLegend = options.drawLegend;
+	end
+	if isfield(options,'relativePhase')
+		F.relativePhase = options.relativePhase;
 	end
 
 	numRows = max(length(Ex)*F.drawAll,1);
@@ -128,6 +133,20 @@ function F = Render(F, x, y, Ex, Ey, Ez, rowLabel, paramVal)
 	fontsize(scale=F.sf);
 	clf(F.fig);
 	F.paramVal = paramVal;
+
+	% normalize each field
+	for k=1:length(Ex)
+		% if plotting the B field, we want to normalize relative to B_y
+		if F.isB && k==2
+			Eref = Ey{k};
+		else
+			Eref = Ex{k};
+		end
+		E0 = max(abs(Eref),[],"all");
+		Ex{k} = Ex{k}/E0;
+		Ey{k} = Ey{k}/E0;
+		Ez{k} = Ez{k}/E0;
+	end
 
 	% how many phase plots should we draw?
 	if F.drawAll==1
@@ -186,28 +205,27 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 
 	% if plotting the B field, we want to normalize relative to B_y
 	if F.isB && rowNum==2
-		E0complex = max(Ey,[],"all");
-		phsglobal = conj(E0complex)/abs(E0complex);
-		Ex0 = max(abs(Ex),[],"all");
-		Ey0 = abs(E0complex);
-		Ez0 = max(abs(Ez),[],"all");
-		xdigits = ceil(-log10(Ex0/Ey0));
-		zdigits = ceil(-log10(Ez0/Ey0));
+		Eref = Ey;
 	else
-		E0complex = max(Ex,[],"all");
-		phsglobal = conj(E0complex)/abs(E0complex);
-		% TODO: relative phase
-		Ex0 = abs(E0complex);
-		Ey0 = max(abs(Ey),[],"all");
-		Ez0 = max(abs(Ez),[],"all");
-		ydigits = ceil(-log10(Ey0/Ex0));
-		zdigits = ceil(-log10(Ez0/Ex0));
+		Eref = Ex;
 	end
+	% global or local phase correction?
+	if F.relativePhase==0
+		Eref = max(Eref,[],"all");
+	end
+	E0phase = abs(Eref)./Eref;
+
+	Ex0 = max(abs(Ex),[],"all");
+	Ey0 = max(abs(Ey),[],"all");
+	Ez0 = max(abs(Ez),[],"all");
+	xdigits = ceil(-log10(Ex0));
+	ydigits = ceil(-log10(Ey0));
+	zdigits = ceil(-log10(Ez0));
 
 	% left axes: x-cross section
 	F.ax{rowNum}=axes('position',[.08 rowHeight .25 F.figHeight(5)]);
 	% render complex phase
-	image([xmin xmax],[ymin ymax],PhaseColor(Ex/Ex0*phsglobal,5));
+	image([xmin xmax],[ymin ymax],PhaseColor(Ex/Ex0.*E0phase,5));
 	set(F.ax{rowNum},'YDir','normal'); % image() reverses y-axis coordinates
 	axis square;
 	axis off;
@@ -232,7 +250,7 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	% middle axes: y-cross section
 	F.ay{rowNum}=axes('position',[.38 rowHeight .25 F.figHeight(5)]);
 	% render complex phase
-	image([xmin xmax],[ymin ymax],PhaseColor(Ey/Ey0*phsglobal,5));
+	image([xmin xmax],[ymin ymax],PhaseColor(Ey/Ey0.*E0phase,5));
 	set(F.ay{rowNum},'YDir','normal');
 	axis square;
 	axis off;
@@ -247,7 +265,7 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	else
 		title(['$E_y / (' num2str(round(Ey0*10^ydigits)/10^ydigits) ' E_0)$'], ...
 			'Interpreter','latex')
-	end % TODO: correct scaling factor?
+	end
 	% cross-section line (diagonal on this one)
 	if F.drawLineout==1
 		plot3([-sqrt(xmin^2/2),sqrt(xmax^2/2)],[-sqrt(xmin^2/2),sqrt(xmax^2/2)],[2,2], ...
@@ -258,7 +276,7 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	% right axes: z-cross section
 	F.az{rowNum}=axes('position',[.68 rowHeight .25 F.figHeight(5)]);
 	% render complex phase
-	image([xmin xmax],[ymin ymax],PhaseColor(Ez/Ez0*phsglobal,5));
+	image([xmin xmax],[ymin ymax],PhaseColor(Ez/Ez0.*E0phase,5));
 	set(F.az{rowNum},'YDir','normal');
 	axis square;
 	%axis off;
@@ -307,11 +325,6 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 		Exf{k} = interp2(x,y,Ex{k},xrange,0*yrange);
 		Eyf{k} = interp2(x,y,Ey{k},sqrt(0.5)*xrange,sqrt(0.5)*yrange);
 		Ezf{k} = interp2(x,y,Ez{k},xrange,0*yrange);
-		% normalize each row relative to the x component
-		Ex0 = max(abs(Ex{k}),[],"all");
-		Exf{k} = abs(Exf{k})/Ex0;
-		Eyf{k} = abs(Eyf{k})/Ex0;
-		Ezf{k} = abs(Ezf{k})/Ex0;
 	end
 	% colors + styles
 	clrs = {[200,0,0]/255,[49,54,143]/255,[49,54,143]/255};
@@ -321,7 +334,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	F.ax{end+1}=axes('position',[.08 F.figHeight(4) .25 F.figHeight(5)]);
 	hold on
 	for k=1:min(length(Ex),3)
-		plot(xrange,Exf{k},stls{k},'Color',clrs{k},'LineWidth',1.5,'DisplayName',label{k});
+		plot(xrange,abs(Exf{k}),stls{k},'Color',clrs{k},'LineWidth',1.5,'DisplayName',label{k});
 	end
 	hold off
 	set(F.ax{end},'YDir','normal','TickLabelInterpreter','latex');
@@ -334,7 +347,6 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	F.ax{end}.YTick = [0 1];
 	axis square;
 	% formatted title
-	%xdigits = ceil(-log10(Ex0));
 	title('$\left| E_x \right| / E_0$', 'Interpreter','latex');
 	% include a legend box in the upper-right corner of the figure
 	if F.drawLegend==1
@@ -346,7 +358,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	F.ay{end+1}=axes('position',[.38 F.figHeight(4) .25 F.figHeight(5)]);
 	hold on
 	for k=1:min(length(Ex),3)
-		plot(xrange,Eyf{k},stls{k},'Color',clrs{k},'LineWidth',1.5);
+		plot(xrange,abs(Eyf{k}),stls{k},'Color',clrs{k},'LineWidth',1.5);
 	end
 	hold off
 	set(F.ay{end},'YDir','normal','TickLabelInterpreter','latex');
@@ -359,16 +371,13 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	F.ay{end}.YTick = [0 0.01 0.1];
 	axis square;
 	% formatted title
-	%ydigits = ceil(-log10(Ey0/Ex0)); TODO: scaling
-	title(['$\left| E_y \right| / ' ...
-		...num2str(round(Ey0/Ex0*10^ydigits)/10^ydigits) ...
-		' E_0$'], 'Interpreter','latex')
+	title(['$\left| E_y \right| / E_0$'], 'Interpreter','latex')
 
 	% right axes: z-cross section
 	F.az{end+1}=axes('position',[.68 F.figHeight(4) .25 F.figHeight(5)]);
 	hold on
 	for k=1:min(length(Ex),3)
-		plot(xrange,Ezf{k},stls{k},'Color',clrs{k},'LineWidth',1.5);
+		plot(xrange,abs(Ezf{k}),stls{k},'Color',clrs{k},'LineWidth',1.5);
 	end
 	hold off
 	set(F.az{end},'YDir','normal','TickLabelInterpreter','latex');
@@ -382,10 +391,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	F.az{end}.YTick = [0 0.15];
 	axis square;
 	% formatted title
-	%zdigits = ceil(-log10(Ez0/Ex0)); TODO: scaling
-	title(['$\left| E_z \right| / ' ...
-		...num2str(round(Ez0/Ex0*10^zdigits)/10^zdigits) ...
-		' E_0$'], 'Interpreter','latex')
+	title(['$\left| E_z \right| / E_0$'], 'Interpreter','latex')
 end
 
 function F = colorbar(F)
