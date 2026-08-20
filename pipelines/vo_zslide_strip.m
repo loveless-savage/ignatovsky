@@ -20,11 +20,11 @@ for n=1:length(zrange)
 	[x(:,:,n),y(:,:,n),z(:,:,n),xo,yo,zo] = camera(N,zoffset,-oap,oaphi);
 	[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,oap,oaphi);
 	[Ex(:,:,n),Ey(:,:,n),Ez(:,:,n)] = rot(Exo,Eyo,Ezo,oap,oaphi);
-	[Exp(:,:,n),Eyp(:,:,n),Ezp(:,:,n)] = Soap(x(:,:,n),y(:,:,n),z(:,:,n),oap,oaphi);
+	[Exp(:,:,n),Eyp(:,:,n),Ezp(:,:,n)] = MSM(x(:,:,n),y(:,:,n),z(:,:,n),oap,oaphi);
 	[Exs(:,:,n),Eys(:,:,n),Ezs(:,:,n)] = Singh(x(:,:,n),y(:,:,n),z(:,:,n));
 	n
 end
-params = {'paramText','$\\z=%d\\lambda$',...
+params = {'paramText','$z=%d\\lambda$',...
 		  'drawHeader',true,'drawLineout',true,'drawLegend',true,'relativePhase',true,'figX',0.5};
 FieldCrossMovie(x,y,Ex,Ey,Ez,'Ignatovsky',Exp,Eyp,Ezp,'MSM',Exs,Eys,Ezs,'Singh',...
 	paramVals=zrange, renderParams=params, live=true, movieName="vo_zslide_strip");

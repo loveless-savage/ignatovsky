@@ -7,7 +7,7 @@ wbeam = f/2/fnum*sec(oap/2)^2; % convert from effective focal length to parent f
 
 [Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,oap,oaphi);
 [Ex,Ey,Ez] = rot(Exo,Eyo,Ezo,oap,oaphi);
-[Exp,Eyp,Ezp] = Soap(x,y,z,oap,oaphi);
+[Exp,Eyp,Ezp] = MSM(x,y,z,oap,oaphi);
 [Exs,Eys,Ezs] = Singh(x,y,z);
 
 FieldCrossRender(x,y,Ex,Ey,Ez,'Ignatovsky',Exp,Eyp,Ezp,'MSM',Exs,Eys,Ezs,'Singh',...

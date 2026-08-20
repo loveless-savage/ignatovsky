@@ -13,7 +13,7 @@ for n=1:length(oaprange)
 	[x,y,z,xo,yo,zo] = camera(N,zoffset,-oap,oaphi);
 	[Exo,Eyo,Ezo] = IgnatovskyIntegral(xo,yo,zo,oap,oaphi);
 	[Ex(:,:,n),Ey(:,:,n),Ez(:,:,n)] = rot(Exo,Eyo,Ezo,oap,oaphi);
-	[Exp(:,:,n),Eyp(:,:,n),Ezp(:,:,n)] = Soap(x,y,z,oap,oaphi);
+	[Exp(:,:,n),Eyp(:,:,n),Ezp(:,:,n)] = MSM(x,y,z,oap,oaphi);
 	n
 end
 [Exs,Eys,Ezs] = Singh(x,y,z);
