@@ -1,6 +1,6 @@
 %% circular gaussian pulse, integrating off a full parabolic mirror.
 function [Ex,Ey,Ez,Bx,By,Bz]=IgnatovskyIntegral(x,y,z,oap,oaphi)
-global k wbeam f;
+global k f;
 
 %% mirror + beam setup
 % integration resolution
@@ -9,8 +9,6 @@ N = 33;
 [xi,yi,Env,dA] = mirror(N,oap,oaphi);
 % radius of parabola
 rho2 = xi.^2 + yi.^2;
-% mirror depth
-%zi = rho2/4/f - f;
 % normalization constant for mirror-related unit vectors
 znorm = 1 + rho2/4/f^2;
 % propagation direction off of all points on the mirror
