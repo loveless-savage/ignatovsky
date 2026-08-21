@@ -235,12 +235,16 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 		mirrorDecorations(oap,oaphi);
 	end
 	% formatted title
-	if F.isB && rowNum==2
-		title(['$c B_x / (' num2str(round(Ex0*10^xdigits)/10^xdigits) ' B_0)$'], ...
-			'Interpreter','latex')
-	else
-		title(['$E_x / E_0$'], 'Interpreter','latex')
+	titleStr = '';
+	if F.relativePhase==1
+		titleStr = 'e^{i\psi_x}';
 	end
+	if F.isB && rowNum==2
+		titleStr = sprintf("$c B_x / ( %.3f B_0 %s )$", Ex0, titleStr);
+	else
+		titleStr = sprintf("$E_x / E_0 %s$", titleStr);
+	end
+	title(titleStr,'Interpreter','latex')
 	% lineout section line
 	if F.drawLineout==1
 		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
@@ -260,12 +264,16 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 		mirrorDecorations(oap,oaphi);
 	end
 	% formatted title
-	if F.isB && rowNum==2
-		title(['$c B_y / B_0$'], 'Interpreter','latex')
-	else
-		title(['$E_y / (' num2str(round(Ey0*10^ydigits)/10^ydigits) ' E_0)$'], ...
-			'Interpreter','latex')
+	titleStr = '';
+	if F.relativePhase==1
+		titleStr = 'e^{i\psi_x}';
 	end
+	if F.isB && rowNum==2
+		titleStr = sprintf("$c B_y / B_0 %s$", titleStr);
+	else
+		titleStr = sprintf("$E_y / ( %.3f E_0 %s )$", Ey0, titleStr);
+	end
+	title(titleStr,'Interpreter','latex')
 	% cross-section line (diagonal on this one)
 	if F.drawLineout==1
 		plot3([-sqrt(xmin^2/2),sqrt(xmax^2/2)],[-sqrt(xmin^2/2),sqrt(xmax^2/2)],[2,2], ...
@@ -286,13 +294,16 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 		mirrorDecorations(oap,oaphi);
 	end
 	% formatted title
-	if F.isB && rowNum==2
-		title(['$c B_z / (' num2str(round(Ez0*10^zdigits)/10^zdigits) ' B_0)$'], ...
-			'Interpreter','latex')
-	else
-		title(['$E_z / (' num2str(round(Ez0*10^zdigits)/10^zdigits) ' E_0)$'], ...
-			'Interpreter','latex')
+	titleStr = '';
+	if F.relativePhase==1
+		titleStr = 'e^{i\psi_x}';
 	end
+	if F.isB && rowNum==2
+		titleStr = sprintf("$c B_z / ( %.3f B_0 %s )$", Ez0, titleStr);
+	else
+		titleStr = sprintf("$E_z / ( %.3f E_0 %s )$", Ez0, titleStr);
+	end
+	title(titleStr,'Interpreter','latex')
 	% cross-section line
 	if F.drawLineout==1
 		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
