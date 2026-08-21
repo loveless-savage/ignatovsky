@@ -333,9 +333,9 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	xmin = min(xrange); xmax = max(xrange);
 	ymin = min(yrange); ymax = max(yrange);
 	for k=1:min(length(Ex),3)
-		Exf{k} = interp2(x,y,Ex{k},xrange,0*yrange);
-		Eyf{k} = interp2(x,y,Ey{k},sqrt(0.5)*xrange,sqrt(0.5)*yrange);
-		Ezf{k} = interp2(x,y,Ez{k},xrange,0*yrange);
+		Exf{k} = abs(interp2(x,y,Ex{k},xrange,0*yrange));
+		Eyf{k} = abs(interp2(x,y,Ey{k},sqrt(0.5)*xrange,sqrt(0.5)*yrange));
+		Ezf{k} = abs(interp2(x,y,Ez{k},xrange,0*yrange));
 	end
 	% colors + styles
 	clrs = {[200,0,0]/255,[49,54,143]/255,[49,54,143]/255};
@@ -345,7 +345,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	F.ax{end+1}=axes('position',[.08 F.figHeight(4) .25 F.figHeight(5)]);
 	hold on
 	for k=1:min(length(Ex),3)
-		plot(xrange,abs(Exf{k}),stls{k},'Color',clrs{k},'LineWidth',1.5,'DisplayName',label{k});
+		plot(xrange,Exf{k},stls{k},'Color',clrs{k},'LineWidth',1.5,'DisplayName',label{k});
 	end
 	hold off
 	set(F.ax{end},'YDir','normal','TickLabelInterpreter','latex');
@@ -356,6 +356,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	F.ax{end}.XTick = [xmin 0 xmax] * 0.8;
 	F.ax{end}.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
 	F.ax{end}.YTick = [0 1];
+	F.ax{end}.TickLength = [0.03 0.025];
 	axis square;
 	% formatted title
 	title('$\left| E_x \right| / E_0$', 'Interpreter','latex');
@@ -368,18 +369,21 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	% middle axes: y-cross section
 	F.ay{end+1}=axes('position',[.38 F.figHeight(4) .25 F.figHeight(5)]);
 	hold on
+	ymaxval = 0.01;
 	for k=1:min(length(Ex),3)
-		plot(xrange,abs(Eyf{k}),stls{k},'Color',clrs{k},'LineWidth',1.5);
+		plot(xrange,Eyf{k},stls{k},'Color',clrs{k},'LineWidth',1.5);
+		ymaxval = max([ymaxval Eyf{k}]);
 	end
 	hold off
 	set(F.ay{end},'YDir','normal','TickLabelInterpreter','latex');
 	% label axes
 	xlabel('$r / \lambda$','Interpreter','latex');
 	xlim([xmin xmax]);
-	ylim(1.05*ylim);
+	ylim([0 1.05*ymaxval]);
 	F.ay{end}.XTick = [xmin 0 xmax] * 0.8;
 	F.ay{end}.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
 	F.ay{end}.YTick = [0 0.01 0.1];
+	F.ay{end}.TickLength = [0.03 0.025];
 	axis square;
 	% formatted title
 	title(['$\left| E_y \right| / E_0$'], 'Interpreter','latex')
