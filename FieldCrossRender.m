@@ -128,11 +128,9 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 end
 
 function F = Render(F, x, y, Ex, Ey, Ez, rowLabel, paramVal)
-	% scale label text with figure size
-	set(0,'DefaultAxesFontSize',16);
-	fontsize(scale=F.sf);
-	clf(F.fig);
 	F.paramVal = paramVal;
+	clf(F.fig);
+	set(0,'DefaultAxesFontSize',18);
 
 	% normalize each field
 	for k=1:length(Ex)
@@ -179,6 +177,8 @@ function F = Render(F, x, y, Ex, Ey, Ez, rowLabel, paramVal)
 			'Interpreter','latex','FontSize',20,...
 			'EdgeColor','none','Rotation',90);
 	end
+	% scale label text with figure size
+	fontsize(F.fig,scale=F.sf);
 end
 
 function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
@@ -247,7 +247,7 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	title(titleStr,'Interpreter','latex')
 	% lineout section line
 	if F.drawLineout==1
-		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
+		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',2*F.sf);
 	end
 	hold off
 
@@ -277,7 +277,7 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	% cross-section line (diagonal on this one)
 	if F.drawLineout==1
 		plot3([-sqrt(xmin^2/2),sqrt(xmax^2/2)],[-sqrt(xmin^2/2),sqrt(xmax^2/2)],[2,2], ...
-			'w--','LineWidth',1);
+			'w--','LineWidth',2*F.sf);
 	end
 	hold off
 
@@ -306,7 +306,7 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	title(titleStr,'Interpreter','latex')
 	% cross-section line
 	if F.drawLineout==1
-		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',1);
+		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',2*F.sf);
 	end
 	% label axes
 	%ylabel('$r / \lambda$','Interpreter','latex');
@@ -323,7 +323,7 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 
 	% side label
 	annotation('textbox',[.08 rowHeight F.figHeight(5) 0.06],...
-		'String',label,'Interpreter','latex','FontSize',20,...
+		'String',label,'Interpreter','latex','FontSize',24,...
 		'EdgeColor','none','FitBoxToText',false,'Rotation',90,...
 		'HorizontalAlignment','center','VerticalAlignment','middle');
 end
@@ -387,26 +387,29 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	% right axes: z-cross section
 	F.az{end+1}=axes('position',[.68 F.figHeight(4) .25 F.figHeight(5)]);
 	hold on
+	zmaxval = 0.1;
 	for k=1:min(length(Ex),3)
-		plot(xrange,abs(Ezf{k}),stls{k},'Color',clrs{k},'LineWidth',1.5);
+		plot(xrange,Ezf{k},stls{k},'Color',clrs{k},'LineWidth',1.5);
+		zmaxval = max([zmaxval Ezf{k}]);
 	end
 	hold off
 	set(F.az{end},'YDir','normal','TickLabelInterpreter','latex');
 	% label axes
 	xlabel('$r / \lambda$','Interpreter','latex');
 	xlim([xmin xmax]);
-	yAutoBounds = ylim;
-	ylim(1.05*yAutoBounds);
+	ylim([0 1.05*zmaxval]);
 	F.az{end}.XTick = [xmin 0 xmax] * 0.8;
 	F.az{end}.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
 	F.az{end}.YTick = [0 0.15];
+	F.az{end}.TickLength = [0.03 0.025];
 	axis square;
 	% formatted title
 	title(['$\left| E_z \right| / E_0$'], 'Interpreter','latex')
 end
 
 function F = colorbar(F)
-	acb=axes('position',[.38 F.figHeight(6) .25 F.figHeight(7)]);
+	acb=axes('position',[.38 F.figHeight(6) .25 F.figHeight(7)],...
+		'DefaultAxesFontSize',16);
 	% render spectrum of phase colors
 	phase = 0:pi/50:2*pi;
 	amplitude = 0:0.02:1;
@@ -414,8 +417,8 @@ function F = colorbar(F)
 	image([0 2*pi],[0 1],PhaseColor(A.*exp(1i*P),5));
 	set(acb,'YDir','normal','XAxisLocation','top','TickLabelInterpreter','latex');
 	% label axes
-	xlabel('phase');
-	ylabel('amp.');
+	xlabel('phase','Interpreter','latex');
+	ylabel('amp.','Interpreter','latex');
 	% add range labels to axes
 	acb.XTick = [0 pi 2*pi];
 	acb.XTickLabel = {'0','$\pi$','$2\pi$'};
