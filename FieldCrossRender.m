@@ -57,6 +57,7 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 		options.drawHeader logical = true
 		options.drawLegend logical = false
 		options.relativePhase logical = false
+		options.invisible logical = false
 	end
 
 	if isfield(options,'figWidth')
@@ -115,14 +116,17 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 			if F.drawHeader==0 % no header
 				F.figHeight(1:5) = [9.6*F.sf 0.7   0.4   0.1   0.247];
 			else % header
-				F.figHeight(1:7) = [10.4*F.sf 0.64 0.37  0.09  0.23  0.924 0.034];
+				F.figHeight(1:7) = [10.4*F.sf 0.64 0.37  0.09  0.23  0.92 0.034];
 			end
 	end
 
-	F.fig = figure('Units','Inches','Position', ...
-			[options.figX options.figY options.figWidth F.figHeight(1)]);
-	F.fig.InvertHardcopy = 'off';
-	F.fig.Color = 'white';
+	params = {'Units','Inches','Position', ...
+		[options.figX options.figY options.figWidth F.figHeight(1)],...
+		'InvertHardcopy','off','Color','white'};
+	if options.invisible==1
+		params = {params{:},'Visible','off'};
+	end
+	F.fig = figure(params{:});
 
 	F = F.Render(x, y, Ex, Ey, Ez, rowLabel, F.paramVal);
 end
@@ -362,8 +366,9 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	title('$\left| E_x \right| / E_0$', 'Interpreter','latex');
 	% include a legend box in the upper-right corner of the figure
 	if F.drawLegend==1
-		la=legend('Location','southwest');
-		set(la, 'Position',[0.79 F.figHeight(6) .1 .05]);
+		la=legend('Position',[0.75 F.figHeight(6) .11 .05],...
+			'Interpreter','latex','FontSize',14);
+		set(la,'Position',get(la,'Position') + [0 .01 0 0]);
 	end
 
 	% middle axes: y-cross section
@@ -429,7 +434,7 @@ function F = colorbar(F)
 	acb.YTick = [-1 0 1];
 	% reposition x-axis label
 	xlabh = get(acb,'XLabel');
-	set(xlabh,'Position',get(xlabh,'Position') - [0 .3 0]);
+	set(xlabh,'Position',get(xlabh,'Position') - [0 .04 0]);
 end
 
 end % methods
