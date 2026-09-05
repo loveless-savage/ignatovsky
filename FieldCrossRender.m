@@ -64,8 +64,6 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 		F.figWidth = options.figWidth;
 		F.sf = F.figWidth/10;
 	end
-	F.figHeight(1) = 7.2*F.sf;
-
 	if isfield(options,'paramText')
 		F.paramText = options.paramText;
 	end
@@ -116,7 +114,7 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 			if F.drawHeader==0 % no header
 				F.figHeight(1:5) = [9.6*F.sf 0.7   0.4   0.1   0.247];
 			else % header
-				F.figHeight(1:7) = [10.4*F.sf 0.64 0.37  0.09  0.23  0.92 0.034];
+				F.figHeight(1:7) = [10.4*F.sf 0.64 0.36  0.08  0.23  0.92 0.034];
 			end
 	end
 
@@ -156,7 +154,7 @@ function F = Render(F, x, y, Ex, Ey, Ez, rowLabel, paramVal)
 		rowRange = 1:min(length(Ex),3-F.drawLineout);
 	else
 		% if !F.drawAll, just draw 1 row
-		rowRange = 1:1;
+		rowRange = 1;
 	end
 	% draw phase plots
 	for k=rowRange
@@ -203,8 +201,13 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 			oaphi = F.paramVal(2);
 		end
 	else
-		xmin = min(xrange); xmax = max(xrange);
-		ymin = min(yrange); ymax = max(yrange);
+		xmax = (max(xrange)-min(xrange))/2; xmin = -xmax;
+		ymax = (max(yrange)-min(yrange))/2; ymin = -ymax;
+		if F.drawMirror==1 % rescale secondary rows in terms of f
+			global f;
+			xmin = xmin/f; xmax = xmax/f;
+			ymin = ymin/f; ymax = ymax/f;
+		end
 	end
 
 	% if plotting the B field, we want to normalize relative to B_y
@@ -243,7 +246,13 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	if F.relativePhase==1
 		titleStr = 'e^{i\psi_x}';
 	end
-	if F.isB && rowNum==2
+	if F.drawMirror==1
+		titleStr = "$\mathbf{\hat{p}}^{(E)}_x";
+		if rowNum>1
+			titleStr = join([titleStr "\,E_{env}"]);
+		end
+		titleStr = join([titleStr "(x',\,y')$"]);
+	elseif F.isB && rowNum==2
 		titleStr = sprintf("$c B_x / ( %.3f B_0 %s )$", Ex0, titleStr);
 	else
 		titleStr = sprintf("$E_x / E_0 %s$", titleStr);
@@ -272,7 +281,9 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	if F.relativePhase==1
 		titleStr = 'e^{i\psi_x}';
 	end
-	if F.isB && rowNum==2
+	if F.drawMirror==1
+		titleStr = "$\mathbf{\hat{p}}^{(E)}_y(x',\,y')$";
+	elseif F.isB && rowNum==2
 		titleStr = sprintf("$c B_y / B_0 %s$", titleStr);
 	else
 		titleStr = sprintf("$E_y / ( %.3f E_0 %s )$", Ey0, titleStr);
@@ -302,7 +313,9 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	if F.relativePhase==1
 		titleStr = 'e^{i\psi_x}';
 	end
-	if F.isB && rowNum==2
+	if F.drawMirror==1
+		titleStr = "$\mathbf{\hat{p}}^{(E)}_z(x',\,y')$";
+	elseif F.isB && rowNum==2
 		titleStr = sprintf("$c B_z / ( %.3f B_0 %s )$", Ez0, titleStr);
 	else
 		titleStr = sprintf("$E_z / ( %.3f E_0 %s )$", Ez0, titleStr);
@@ -318,7 +331,7 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	F.az{rowNum}.XTick = [];
 	F.az{rowNum}.YTick = [ymin 0 ymax] * 0.8;
 	sideLabelText = '$\ \rho / \lambda$';
-	if F.drawMirror==1 && rowNum==1
+	if F.drawMirror==1
 		sideLabelText = '$\ r / f$';
 	end
 	F.az{rowNum}.YTickLabel = ...
