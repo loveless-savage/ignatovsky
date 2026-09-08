@@ -169,15 +169,12 @@ function F = Render(F, x, y, Ex, Ey, Ez, rowLabel, paramVal)
 
 	% header
 	if F.drawHeader==1
+		headStr = sprintf(F.paramText,paramVal);
+		headStr = split(headStr,"\\");
 		annotation('textbox',[.05 F.figHeight(6) .25 F.figHeight(7)],...
-			'String',sprintf(F.paramText,paramVal),...
-			'Interpreter','latex','FontSize',20,'EdgeColor','none');
+			'String',headStr,'Interpreter','latex','FontSize',20,...
+			'VerticalAlignment','bottom','EdgeColor','none');
 		F = F.colorbar();
-	else
-		annotation('textbox',[0.048 0.37 0.1 0.1],...
-			'String',sprintf(F.paramText,paramVal),...
-			'Interpreter','latex','FontSize',20,...
-			'EdgeColor','none','Rotation',90);
 	end
 	% scale label text with figure size
 	fontsize(F.fig,scale=F.sf);
@@ -350,9 +347,9 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	xmin = min(xrange); xmax = max(xrange);
 	ymin = min(yrange); ymax = max(yrange);
 	for k=1:min(length(Ex),3)
-		Exf{k} = abs(interp2(x,y,Ex{k},xrange,0*yrange));
-		Eyf{k} = abs(interp2(x,y,Ey{k},sqrt(0.5)*xrange,sqrt(0.5)*yrange));
-		Ezf{k} = abs(interp2(x,y,Ez{k},xrange,0*yrange));
+		Exf{k} = interp2(x,y,abs(Ex{k}),xrange,0*yrange);
+		Eyf{k} = interp2(x,y,abs(Ey{k}),sqrt(0.5)*xrange,sqrt(0.5)*yrange);
+		Ezf{k} = interp2(x,y,abs(Ez{k}),xrange,0*yrange);
 	end
 	% colors + styles
 	clrs = {[200,0,0]/255,[49,54,143]/255,[49,54,143]/255};
@@ -395,7 +392,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	hold off
 	set(F.ay{end},'YDir','normal','TickLabelInterpreter','latex');
 	% label axes
-	xlabel('$r / \lambda$','Interpreter','latex');
+	xlabel('$\rho / \lambda$','Interpreter','latex');
 	xlim([xmin xmax]);
 	ylim([0 1.05*ymaxval]);
 	F.ay{end}.XTick = [xmin 0 xmax] * 0.8;
