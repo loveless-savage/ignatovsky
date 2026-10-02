@@ -130,10 +130,18 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 end
 
 function F = Render(F, x, y, Ex, Ey, Ez, rowLabel, paramVal)
-	F.paramVal = paramVal;
+	if nargin>7
+		F.paramVal = paramVal;
+	end
 	clf(F.fig);
 	set(0,'DefaultAxesFontSize',18);
 
+	if ~iscell(Ex)
+		Ex = {Ex};
+		Ey = {Ey};
+		Ez = {Ez};
+		rowLabel = {rowLabel};
+	end
 	% normalize each field
 	for k=1:length(Ex)
 		% if plotting the B field, we want to normalize relative to B_y
@@ -162,14 +170,12 @@ function F = Render(F, x, y, Ex, Ey, Ez, rowLabel, paramVal)
 	end
 	% draw lineout if requested
 	if F.drawLineout==1 % draw lineout row on bottom
-		xrange = x(1,:);
-		yrange = y(:,1)';
-		F = F.lineout(x,y,Ex,Ey,Ez,rowLabel,xrange,yrange);
+		F = F.lineout(x,y,Ex,Ey,Ez,rowLabel);
 	end
 
 	% header
 	if F.drawHeader==1
-		headStr = sprintf(F.paramText,paramVal);
+		headStr = sprintf(F.paramText,F.paramVal);
 		headStr = split(headStr,"\\");
 		annotation('textbox',[.05 F.figHeight(6) .25 F.figHeight(7)],...
 			'String',headStr,'Interpreter','latex','FontSize',20,...
@@ -197,7 +203,7 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 			oap = F.paramVal(1);
 			oaphi = F.paramVal(2);
 		end
-	else
+	else % normal FOV boundary
 		xmax = (max(xrange)-min(xrange))/2; xmin = -xmax;
 		ymax = (max(yrange)-min(yrange))/2; ymin = -ymax;
 		if F.drawMirror==1 % rescale secondary rows in terms of f
@@ -342,10 +348,11 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 		'HorizontalAlignment','center','VerticalAlignment','middle');
 end
 
-function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
+function F = lineout(F,x,y,Ex,Ey,Ez,label)
+	xrange = x(1,:);
+	yrange = y(:,1)';
 	% interpolate string of points from each matrix to get cross sections
 	xmin = min(xrange); xmax = max(xrange);
-	ymin = min(yrange); ymax = max(yrange);
 	for k=1:min(length(Ex),3)
 		Exf{k} = interp2(x,y,abs(Ex{k}),xrange,0*yrange);
 		Eyf{k} = interp2(x,y,abs(Ey{k}),sqrt(0.5)*xrange,sqrt(0.5)*yrange);
@@ -364,7 +371,7 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	hold off
 	set(F.ax{end},'YDir','normal','TickLabelInterpreter','latex');
 	% label axes
-	xlabel('$r / \lambda$','Interpreter','latex');
+	xlabel('$\rho / \lambda$','Interpreter','latex');
 	xlim([xmin xmax]);
 	ylim(1.05*ylim);
 	F.ax{end}.XTick = [xmin 0 xmax] * 0.8;
@@ -414,12 +421,12 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label,xrange,yrange)
 	hold off
 	set(F.az{end},'YDir','normal','TickLabelInterpreter','latex');
 	% label axes
-	xlabel('$r / \lambda$','Interpreter','latex');
+	xlabel('$\rho / \lambda$','Interpreter','latex');
 	xlim([xmin xmax]);
 	ylim([0 1.05*zmaxval]);
 	F.az{end}.XTick = [xmin 0 xmax] * 0.8;
 	F.az{end}.XTickLabel = {sprintf('%3.1f',xmin*0.8) '0' sprintf('%3.1f',xmax*0.8)};
-	F.az{end}.YTick = [0 0.15];
+	F.az{end}.YTick = [0 0.01 0.1];
 	F.az{end}.TickLength = [0.03 0.025];
 	axis square;
 	% formatted title
