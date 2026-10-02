@@ -10,6 +10,9 @@ properties
 	drawHeader = true;
 	drawLegend = false;
 	relativePhase = false; % whether to compensate for phase changes in x
+	lineangx = 0; % angles of lineout cross sections
+	lineangy = pi/4;
+	lineangz = 0;
 end
 properties (SetAccess = private)
 	ax = {} % plots
@@ -51,6 +54,9 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 		options.paramText string = ''
 		options.paramVal double
 		options.drawLineout logical = true
+		options.lineangx double
+		options.lineangy double
+		options.lineangz double
 		options.drawAll logical = true
 		options.isB logical = false
 		options.mirrorRimfscale double
@@ -72,6 +78,15 @@ function F = FieldCrossRender(x, y, Ex, Ey, Ez, rowLabel, options)
 	end
 	if isfield(options,'drawLineout')
 		F.drawLineout = options.drawLineout;
+	end
+	if isfield(options,'lineangx')
+		F.lineangx = options.lineangx;
+	end
+	if isfield(options,'lineangy')
+		F.lineangy = options.lineangy;
+	end
+	if isfield(options,'lineangz')
+		F.lineangz = options.lineangz;
 	end
 	if isfield(options,'drawAll')
 		F.drawAll = options.drawAll;
@@ -263,7 +278,8 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	title(titleStr,'Interpreter','latex')
 	% lineout section line
 	if F.drawLineout==1
-		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',2*F.sf);
+		plot3(cos(F.lineangx)*[xmin,xmax],sin(F.lineangx)*[ymin,ymax],[2,2],...
+			'w--','LineWidth',2*F.sf);
 	end
 	hold off
 
@@ -294,7 +310,7 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	title(titleStr,'Interpreter','latex')
 	% cross-section line (diagonal on this one)
 	if F.drawLineout==1
-		plot3([-sqrt(xmin^2/2),sqrt(xmax^2/2)],[-sqrt(xmin^2/2),sqrt(xmax^2/2)],[2,2], ...
+		plot3(cos(F.lineangy)*[xmin,xmax],sin(F.lineangy)*[ymin,ymax],[2,2], ...
 			'w--','LineWidth',2*F.sf);
 	end
 	hold off
@@ -326,7 +342,8 @@ function F = drawRow(F, rowNum, x, y, Ex, Ey, Ez, label)
 	title(titleStr,'Interpreter','latex')
 	% cross-section line
 	if F.drawLineout==1
-		plot3([xmin,xmax],[0,0],[2,2],'w--','LineWidth',2*F.sf);
+		plot3(cos(F.lineangz)*[xmin,xmax],sin(F.lineangz)*[ymin,ymax],[2,2],...
+			'w--','LineWidth',2*F.sf);
 	end
 	% label axes
 	%ylabel('$r / \lambda$','Interpreter','latex');
@@ -354,9 +371,12 @@ function F = lineout(F,x,y,Ex,Ey,Ez,label)
 	% interpolate string of points from each matrix to get cross sections
 	xmin = min(xrange); xmax = max(xrange);
 	for k=1:min(length(Ex),3)
-		Exf{k} = interp2(x,y,abs(Ex{k}),xrange,0*yrange);
-		Eyf{k} = interp2(x,y,abs(Ey{k}),sqrt(0.5)*xrange,sqrt(0.5)*yrange);
-		Ezf{k} = interp2(x,y,abs(Ez{k}),xrange,0*yrange);
+		Exf{k} = interp2(x,y,abs(Ex{k}),...
+			cos(F.lineangx)*xrange,sin(F.lineangx)*yrange);
+		Eyf{k} = interp2(x,y,abs(Ey{k}),...
+			cos(F.lineangy)*xrange,sin(F.lineangy)*yrange);
+		Ezf{k} = interp2(x,y,abs(Ez{k}),...
+			cos(F.lineangz)*xrange,sin(F.lineangz)*yrange);
 	end
 	% colors + styles
 	clrs = {[200,0,0]/255,[49,54,143]/255,[49,54,143]/255};

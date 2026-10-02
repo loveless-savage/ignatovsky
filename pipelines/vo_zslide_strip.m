@@ -2,7 +2,7 @@
 oap = deg2rad(90);
 wbeam = f/2/fnum*sec(oap/2)^2; % convert from effective focal length to parent focal length
 oaphi = 0;
-zrange = [0 1 4 9];
+zrange = tan(0:0.1:1.4)*z0;
 x = zeros([N N length(zrange)]);
 y = x;
 z = x;
@@ -24,7 +24,8 @@ for n=1:length(zrange)
 	[Exs(:,:,n),Eys(:,:,n),Ezs(:,:,n)] = Singh(x(:,:,n),y(:,:,n),z(:,:,n));
 	n
 end
-params = {'paramText','$z=%d\\lambda$',...
-		  'drawHeader',true,'drawLineout',true,'drawLegend',true,'relativePhase',true,'figX',0.5};
+params = {'paramText','$z=%.1fz_0$\\\\$\\theta=90^\\circ,\\ \\phi=0^\\circ$',...
+		  'drawLegend',true,'relativePhase',true,...
+		  'figX',0,'figY',0,'lineangz',pi/2};
 FieldCrossMovie(x,y,Ex,Ey,Ez,'Ignatovsky',Exp,Eyp,Ezp,'MSM',Exs,Eys,Ezs,'Singh',...
-	paramVals=zrange, renderParams=params, live=true, movieName="vo_zslide_strip");
+	paramVals=zrange/z0, renderParams=params, live=true, movieName="vo_zslide_strip");

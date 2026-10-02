@@ -13,6 +13,9 @@ end
 	arguments
 	% name-value arguments
 	options.paramVals double % independent variable varying between frames
+	options.lineangx double % angle of lineout cross-sections
+	options.lineangy double
+	options.lineangz double
 	options.renderParams cell = {'drawLegend',false };
 	options.live logical = false % use arrow keys to interact?
 	options.windowName string
@@ -40,6 +43,18 @@ end
 % extract first entry from each repeating argument list
 inParams = vertcat(Exr,Eyr,Ezr,rowLabel);
 repeatingParams = Eslice(inParams,1);
+
+% append lineout angles if appropriate
+if isfield(options,'lineangx')
+	repeatingParams = {repeatingParams{:},'lineangx',options.lineangx(1)};
+end
+if isfield(options,'lineangy')
+	repeatingParams = {repeatingParams{:},'lineangy',options.lineangy(1)};
+end
+if isfield(options,'lineangz')
+	repeatingParams = {repeatingParams{:},'lineangz',options.lineangz(1)};
+end
+
 % initialize FieldCrossRender with first entries
 F = FieldCrossRender(varlengthslice(x,1),varlengthslice(y,1),...
 	repeatingParams{:}, options.renderParams{:}, paramVal=paramVals(:,1));
@@ -51,12 +66,21 @@ end
 % interactive: use arrow keys to switch between frames
 if isfield(options,'live') && options.live
 	F.fig.UserData = 1;
-	F.fig.KeyReleaseFcn = {@slide,paramVals,F,x,y,Exr,Eyr,Ezr,rowLabel};
+	F.fig.KeyReleaseFcn = {@slide,options,F,x,y,Exr,Eyr,Ezr,rowLabel};
 % non-interactive: print series to video file
 else
 	mkdir("figures/"+options.movieName)
 	for n = 1:length(paramVals)
 		fprintf("n=%d\n",n);
+		if isfield(options,'lineangx')
+			F.lineangx = options.lineangx(n);
+		end
+		if isfield(options,'lineangy')
+			F.lineangy = options.lineangy(n);
+		end
+		if isfield(options,'lineangz')
+			F.lineangz = options.lineangz(n);
+		end
 		repeatingParams = Elistslice({Exr,Eyr,Ezr,rowLabel},n);
 		F.Render(varlengthslice(x,n),varlengthslice(y,n),...
 			repeatingParams{:},paramVals(:,n));
@@ -64,7 +88,7 @@ else
 	end
 end
 
-function slide(src,event,paramVals,F,x,y,Exr,Eyr,Ezr,rowLabel)
+function slide(src,event,options,F,x,y,Exr,Eyr,Ezr,rowLabel)
 	n = src.UserData;
 	switch event.Key
 		case {'leftarrow','uparrow','k'}
@@ -83,10 +107,19 @@ function slide(src,event,paramVals,F,x,y,Exr,Eyr,Ezr,rowLabel)
 			return;
 	end
 	fprintf("n=%d\n",n);
+	if isfield(options,'lineangx')
+		F.lineangx = options.lineangx(n);
+	end
+	if isfield(options,'lineangy')
+		F.lineangy = options.lineangy(n);
+	end
+	if isfield(options,'lineangz')
+		F.lineangz = options.lineangz(n);
+	end
 	repeatingParams = Elistslice({Exr,Eyr,Ezr,rowLabel},n);
 	F.Render(varlengthslice(x,n),varlengthslice(y,n),...
-		repeatingParams{:},paramVals(:,n));
-	F.fig.Name = "theta="+string(paramVals(n))+" ["+string(n)+"]";
+		repeatingParams{:},options.paramVals(:,n));
+	F.fig.Name = "theta="+string(options.paramVals(n))+" ["+string(n)+"]";
 	src.UserData = n;
 end
 end
