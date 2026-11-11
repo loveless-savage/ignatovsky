@@ -1,7 +1,7 @@
 %% compare MSM and Ignatovsky model results in a 3x3 grid with lineouts
-oap = deg2rad(0);
+oap = deg2rad(60);
 oaphi = deg2rad(0);
-zoffset = 10*z0;
+zoffset = 5*z0;
 wbeam = f/2/fnum*sec(oap/2)^2; % convert from effective focal length to parent focal length
 [x,y,z,xo,yo,zo] = camera(N,zoffset,-oap,oaphi);
 
@@ -12,7 +12,8 @@ wbeam = f/2/fnum*sec(oap/2)^2; % convert from effective focal length to parent f
 
 FieldCrossRender(x,y,Ex,Ey,Ez,'Ignatovsky',Exp,Eyp,Ezp,'MSM',Exs,Eys,Ezs,'Singh',...
 	paramText='$z=%.2f z_0$\\\\$\\theta=%d^\\circ,\\ \\phi=%d^\\circ$',drawLegend=true,figX=0.5,...
-	paramVals=[zoffset/z0;rad2deg(oap);rad2deg(oaphi)],relativePhase=true,...
-	figWidth=14,invisible=true);
-saveas(gcf,"figures/test.tif");
+	paramVal=[zoffset/z0;rad2deg(oap);rad2deg(oaphi)],...relativePhase=true,...
+	figX=0,figY=0);
+%	figWidth=14,invisible=true);
+%saveas(gcf,"figures/test.tif");
 close

@@ -2,7 +2,8 @@
 oap = deg2rad(90);
 wbeam = f/2/fnum*sec(oap/2)^2; % convert from effective focal length to parent focal length
 oaphi = 0;
-zrange = tan(0:0.1:1.4)*z0;
+zrange = (0:0.2:3).^1.5*z0;
+%zrange = tan(0:0.1:1.4)*z0;
 x = zeros([N N length(zrange)]);
 y = x;
 z = x;
@@ -22,10 +23,13 @@ for n=1:length(zrange)
 	[Ex(:,:,n),Ey(:,:,n),Ez(:,:,n)] = rot(Exo,Eyo,Ezo,oap,oaphi);
 	[Exp(:,:,n),Eyp(:,:,n),Ezp(:,:,n)] = MSM(x(:,:,n),y(:,:,n),z(:,:,n),oap,oaphi);
 	[Exs(:,:,n),Eys(:,:,n),Ezs(:,:,n)] = Singh(x(:,:,n),y(:,:,n),z(:,:,n));
+	Ez(:,:,n) = Ez(:,:,n)/max(Ex(:,:,n),[],'all')*max(Exp(:,:,n),[],'all');
+	Ey(:,:,n) = Ey(:,:,n)/max(Ex(:,:,n),[],'all')*max(Exp(:,:,n),[],'all');
+	Ex(:,:,n) = Ex(:,:,n)/max(Ex(:,:,n),[],'all')*max(Exp(:,:,n),[],'all');
 	n
 end
 params = {'paramText','$z=%.1fz_0$\\\\$\\theta=90^\\circ,\\ \\phi=0^\\circ$',...
 		  'drawLegend',true,'relativePhase',true,...
-		  'figX',0,'figY',0,'lineangz',pi/2};
+		  'figX',0,'figY',0,'lineangz',0};
 FieldCrossMovie(x,y,Ex,Ey,Ez,'Ignatovsky',Exp,Eyp,Ezp,'MSM',Exs,Eys,Ezs,'Singh',...
 	paramVals=zrange/z0, renderParams=params, live=true, movieName="vo_zslide_strip");
