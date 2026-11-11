@@ -10,7 +10,8 @@ scale=psi.*(sqrt(8)*z0./Z); % scalar field amplitude
 % vector elements
 Ex=scale;
 Ey=scale.*(x.*y/2./Z.^2 + i*tan(oap/2).*(cos(oaphi).*y-sin(oaphi).*x)./Z);
-Ez=scale.*(-i*x - 2*tan(oap/2)*cos(oaphi)/k)./Z;
+Ez=scale.*(-i*x./Z + tan(oap/2)*cos(oaphi)*(...
+	-w0^2./Z.^2+y.^2./Z.^2.*(1+z0/2./abs(Z))+x.^2./Z.^2.*(2*z0./Z)));
 %Ez=scale*-i.*x./Z;
 %Bx=1*Ey;
 %By=1*Ex;

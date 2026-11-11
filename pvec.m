@@ -12,6 +12,7 @@ znorm = 1 + rho2/4/f^2;
 pex = (1-(xi.^2-yi.^2)/4/f^2)./znorm;
 pey = -xi.*yi/2/f^2./znorm;
 pez = xi/f./znorm;
+%pez = (xi/f-yi.^2/4/f^2)./znorm;
 pbx = pey;
 pby = (1+(xi.^2-yi.^2)/4/f^2)./znorm;
 pbz = yi/f./znorm;
