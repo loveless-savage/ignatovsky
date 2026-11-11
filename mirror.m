@@ -16,13 +16,12 @@ y0 = 2*f*tan(oap/2)*sin(oaphi);
 % step sizes
 xrange = xmin:(xmax-xmin)/(N-1):xmax;
 yrange = ymin:(ymax-ymin)/(N-1):ymax;
-% FIXME: rename / refactor as dx,dy?
 % mirror-space cartesian coordinates
 [xi,yi] = meshgrid(xrange,yrange);
 % incident beam profile
-Env = exp(-((xi-x0).^2+(yi-y0).^2)/wbeam^2);
+Env = cos(oap/2)^2*exp(-((xi-x0).^2+(yi-y0).^2)/wbeam^2);
 if nargin>3
-	Env = exp(-((xi-x0).^2+(yi-y0).^2)/wbeamalt^2);
+	Env = cos(oap/2)^2*exp(-((xi-x0).^2+(yi-y0).^2)/wbeamalt^2);
 end
 % Riemann sum needs a differential multiplier
 dA = (xmax-xmin)*(ymax-ymin)/N^2;

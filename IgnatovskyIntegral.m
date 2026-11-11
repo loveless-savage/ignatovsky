@@ -4,9 +4,10 @@ global k f;
 
 %% mirror + beam setup
 % integration resolution
-N = 33;
+N = 491;
 % set up coordinate grid against mirror surface, as well as laser envelope and integration differential
 [xi,yi,Env,dA] = mirror(N,oap,oaphi);
+% beam width changes with varying oap, so compensate by adjusting dA
 % radius of parabola
 rho2 = xi.^2 + yi.^2;
 % normalization constant for mirror-related unit vectors
@@ -38,10 +39,10 @@ for m=1:numel(x)
         .* exp(1i*k*(kx(mask).*x(m) ...
                    + ky(mask).*y(m) ...
                    + kz(mask).*z(m))) ...
-        .* -1i.*exp(1i*(k*f))*k/(2*pi*f) .* dA;
+        .* exp(1i*(k*f))*k/(2*pi*f);
     % vector portions
-    Ex(m) = sum(E_intg.*pex(mask),"all");
-    Ey(m) = sum(E_intg.*pey(mask),"all");
-    Ez(m) = sum(E_intg.*pez(mask),"all");
+    Ex(m) = dA*sum(E_intg.*pex(mask),"all");
+    Ey(m) = dA*sum(E_intg.*pey(mask),"all");
+    Ez(m) = dA*sum(E_intg.*pez(mask),"all");
 end
 
