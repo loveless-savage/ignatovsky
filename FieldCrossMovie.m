@@ -20,6 +20,7 @@ end
 	options.live logical = false % use arrow keys to interact?
 	options.windowName string
 	options.movieName string
+	options.n double % where to start partway through
 end
 
 % extract one layer from a 3D array
@@ -35,6 +36,12 @@ Eslice = @(E,n) cellfun(@(e) varlengthslice(e,n), E,'UniformOutput',false);
 % extract one layer from a list of repeating-argument lists
 Elistslice = @(E,n) cellfun(@(e) Eslice(e,n), E,'UniformOutput',false);
 
+% start partway through the frames
+nstart = 1;
+if isfield(options,'n')
+	nstart = options.n;
+end
+
 if isfield(options,'paramVals')
 	paramVals = options.paramVals;
 else
@@ -42,36 +49,36 @@ else
 end
 % extract first entry from each repeating argument list
 inParams = vertcat(Exr,Eyr,Ezr,rowLabel);
-repeatingParams = Eslice(inParams,1);
+repeatingParams = Eslice(inParams,nstart);
 
 % append lineout angles if appropriate
 if isfield(options,'lineangx')
-	repeatingParams = {repeatingParams{:},'lineangx',options.lineangx(1)};
+	repeatingParams = {repeatingParams{:},'lineangx',options.lineangx(nstart)};
 end
 if isfield(options,'lineangy')
-	repeatingParams = {repeatingParams{:},'lineangy',options.lineangy(1)};
+	repeatingParams = {repeatingParams{:},'lineangy',options.lineangy(nstart)};
 end
 if isfield(options,'lineangz')
-	repeatingParams = {repeatingParams{:},'lineangz',options.lineangz(1)};
+	repeatingParams = {repeatingParams{:},'lineangz',options.lineangz(nstart)};
 end
 
 % initialize FieldCrossRender with first entries
-F = FieldCrossRender(varlengthslice(x,1),varlengthslice(y,1),...
-	repeatingParams{:}, options.renderParams{:}, paramVal=paramVals(:,1));
+F = FieldCrossRender(varlengthslice(x,nstart),varlengthslice(y,nstart),...
+	repeatingParams{:}, options.renderParams{:}, paramVal=paramVals(:,nstart));
 
 if isfield(options,'windowName')
-	F.fig.Name = sprintf(options.windowName+" [%d]",paramVals(1,n),1);
+	F.fig.Name = sprintf(options.windowName+" [%d]",paramVals(1,n),nstart);
 end
 
 % interactive: use arrow keys to switch between frames
 if isfield(options,'live') && options.live
-	F.fig.UserData = 1;
+	F.fig.UserData = nstart;
 	F.fig.KeyReleaseFcn = {@slide,options,F,x,y,Exr,Eyr,Ezr,rowLabel};
 % non-interactive: print series to video file
 else
 	mkdir("figures/"+options.movieName)
-	for n = 1:length(paramVals)
-		fprintf("n=%d\n",n);
+	for n = nstart:length(paramVals)
+		fprintf("render n=%d\n",n);
 		if isfield(options,'lineangx')
 			F.lineangx = options.lineangx(n);
 		end
